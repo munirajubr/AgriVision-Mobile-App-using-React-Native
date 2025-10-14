@@ -1,6 +1,7 @@
 import { View, ScrollView, StyleSheet } from "react-native";
 import Card from "../../components/Card";
 import COLORS from "../../constants/colors";
+import styles from "../../assets/styles/dashboardhome.styles";
 
 export default function Home() {
   return (
@@ -44,24 +45,3 @@ export default function Home() {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  contentContainer: {
-    paddingBottom: 24,
-  },
-  section: {
-    marginTop: 8,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: COLORS.textPrimary,
-    marginHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-});

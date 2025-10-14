@@ -58,18 +58,15 @@ export default function TabLayout() {
         options={{
           title: "Notifications",
           tabBarIcon: ({ color, size }) => (
-            // Correct icon for notifications
             <Ionicons name="notifications-outline" size={size} color={color} />
           ),
         }}
       />
-      {/* Moved 'profile' screen inside the Tabs component */}
       <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
           tabBarIcon: ({ color, size }) => (
-            // Correct icon for profile
             <Ionicons name="person-outline" size={size} color={color} />
           ),
         }}
