@@ -22,7 +22,7 @@ export default function Home() {
           variant="horizontal"
           icon="analytics-outline"
           title="Upload NPK Report"
-          link="/(pages)/npkuploadpage"
+          link="/(pages)/npkupload"
           iconColor="#037B21"
         />
 

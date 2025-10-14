@@ -43,7 +43,7 @@ export default function PagesLayout() {
         }} 
       />
       <Stack.Screen 
-        name="npkuploadpage" 
+        name="npkupload" 
         options={{
           title: 'Upload NPK Data',
           headerShown: true,
@@ -82,6 +82,13 @@ export default function PagesLayout() {
         options={{
           title: 'Terms & Conditions',
           headerShown: true,
+        }} 
+      />
+      <Stack.Screen 
+        name="diseasediagnosis" 
+        options={{
+          title: 'Disease Diagnosis',
+          headerShown: false,
         }} 
       />
     </Stack>
