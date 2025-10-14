@@ -15,13 +15,6 @@ export default function PagesLayout() {
       }}
     >
       <Stack.Screen 
-        name="profile" 
-        options={{
-          title: 'Profile',
-          headerShown: true,
-        }} 
-      />
-      <Stack.Screen 
         name="connectdevicepage" 
         options={{
           title: 'Connect Device',

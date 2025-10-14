@@ -4,7 +4,7 @@ export default function DashboardLayout() {
   return (
     <Stack
       screenOptions={{
-        headerShown: false, // Hide headers since the parent handles the navigation
+        headerShown: false,
       }}
     >
       <Stack.Screen name="home" />

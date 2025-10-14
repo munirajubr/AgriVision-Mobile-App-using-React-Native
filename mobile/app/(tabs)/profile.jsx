@@ -8,11 +8,11 @@ const ProfileScreen = () => {
 
   // Farmer Profile Data
   const farmerData = {
-    name: 'Rajesh Kumar Gowda',
-    email: 'rajesh.farmer@agrivision.com',
-    phone: '+91 98765 43210',
+    name: 'Raj Gowda',
+    email: 'rajgowda@gmail.com',
+    phone: '+91 98765 4XXXX',
     farmName: 'Green Valley Farms',
-    farmLocation: 'Mandya District, Karnataka',
+    farmLocation: 'Kunigal, Karnataka',
     farmSize: '5.2 acres',
     farmingType: 'Organic Farming',
     experience: '15 years',
@@ -473,37 +473,31 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     marginLeft: 6,
   },
-  // NEW: Grid layout for menu items
-  menuGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    justifyContent: 'space-between',
+  menuContainer: {
+    gap: 8,
   },
-  menuBox: {
-    width: '48%', // 2 columns
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: COLORS.cardBackground,
     borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
+    padding: 16,
     borderWidth: 1,
     borderColor: COLORS.border,
-    minHeight: 120,
-    justifyContent: 'center',
   },
-  menuBoxIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  menuIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginRight: 12,
   },
-  menuBoxLabel: {
-    fontSize: 14,
-    fontWeight: '600',
+  menuLabel: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
     color: COLORS.textPrimary,
-    textAlign: 'center',
   },
   versionContainer: {
     alignItems: 'center',
