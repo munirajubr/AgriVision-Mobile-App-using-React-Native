@@ -1,58 +1,52 @@
-import { View, Text, ScrollView, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import COLORS from '../../constants/colors';
 
+const API_URL = 'http://localhost:5000'; // Update with your backend URL
+
 const DiagnosisPage = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
-  
+
   const diagnosisType = params.diagnosisType;
   const isNatural = diagnosisType === 'natural';
-  
+
   // Parse issues from JSON string
   const issues = JSON.parse(params.issues || '[]');
 
-  // Mock treatment data based on diagnosis type
-  const treatments = isNatural ? [
-    {
-      id: 1,
-      name: 'Neem Oil Spray',
-      description: 'Natural fungicide and pesticide',
-      application: 'Mix 2 tablespoons per liter of water. Spray in the evening.',
-      frequency: 'Every 7 days',
-      icon: 'leaf',
-      color: '#4CAF50',
-    },
-    {
-      id: 2,
-      name: 'Compost Tea',
-      description: 'Boost plant immunity naturally',
-      application: 'Dilute 1:10 with water and apply to soil',
-      frequency: 'Twice weekly',
-      icon: 'water',
-      color: '#2196F3',
-    },
-  ] : [
-    {
-      id: 1,
-      name: 'Mancozeb Fungicide',
-      description: 'Broad-spectrum fungicide for leaf diseases',
-      application: 'Mix 2g per liter. Spray thoroughly on affected areas.',
-      frequency: 'Every 10-14 days',
-      icon: 'flask',
-      color: '#2196F3',
-    },
-    {
-      id: 2,
-      name: 'NPK 19-19-19',
-      description: 'Balanced fertilizer for nutrient deficiency',
-      application: '5g per liter as foliar spray',
-      frequency: 'Every 15 days',
-      icon: 'beaker',
-      color: '#FF9800',
-    },
-  ];
+  // Disease name based on first detected issue or fallback
+  const diseaseName = issues.length > 0 ? issues[0] : '';
+
+  const [remedies, setRemedies] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch remedies for the detected disease from the Flask API
+  useEffect(() => {
+    if (!diseaseName) {
+      setRemedies([]);
+      return;
+    }
+
+    setLoading(true);
+    fetch(`${API_URL}/api/remedy/${encodeURIComponent(diseaseName)}`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success && data.disease_info && data.disease_info.remedies) {
+          // Split remedies string into bullet list if it's a string of sentences separated by semicolons or new lines
+          const remediesArr = data.disease_info.remedies.split(/;|\n/).map((r) => r.trim()).filter((r) => r.length > 0);
+          setRemedies(remediesArr);
+        } else {
+          setRemedies(['No remedies information available']);
+        }
+      })
+      .catch((error) => {
+        Alert.alert('Error', 'Failed to fetch remedies. Please try again later.');
+        setRemedies([]);
+      })
+      .finally(() => setLoading(false));
+  }, [diseaseName]);
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -89,45 +83,32 @@ const DiagnosisPage = () => {
       {/* Issues Detected */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Issues Detected</Text>
-        {issues.map((issue, index) => (
-          <View key={index} style={styles.issueCard}>
-            <Ionicons name="alert-circle" size={20} color="#F44336" />
-            <Text style={styles.issueText}>{issue}</Text>
-          </View>
-        ))}
+        {issues.length > 0 ? (
+          issues.map((issue, index) => (
+            <View key={index} style={styles.issueCard}>
+              <Ionicons name="alert-circle" size={20} color="#F44336" />
+              <Text style={styles.issueText}>{issue}</Text>
+            </View>
+          ))
+        ) : (
+          <Text>No issues detected</Text>
+        )}
       </View>
 
-      {/* Recommended Treatments */}
+      {/* Recommended Treatments (From Fetch) */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Recommended Treatments</Text>
-        {treatments.map((treatment) => (
-          <View key={treatment.id} style={styles.treatmentCard}>
-            <View style={[styles.treatmentIcon, { backgroundColor: `${treatment.color}15` }]}>
-              <Ionicons name={treatment.icon} size={28} color={treatment.color} />
-            </View>
-            
-            <View style={styles.treatmentContent}>
-              <Text style={styles.treatmentName}>{treatment.name}</Text>
-              <Text style={styles.treatmentDescription}>{treatment.description}</Text>
-              
-              <View style={styles.treatmentDetail}>
-                <Ionicons name="information-circle-outline" size={16} color={COLORS.textSecondary} />
-                <Text style={styles.treatmentDetailText}>
-                  <Text style={styles.treatmentDetailLabel}>Application: </Text>
-                  {treatment.application}
-                </Text>
-              </View>
-              
-              <View style={styles.treatmentDetail}>
-                <Ionicons name="time-outline" size={16} color={COLORS.textSecondary} />
-                <Text style={styles.treatmentDetailText}>
-                  <Text style={styles.treatmentDetailLabel}>Frequency: </Text>
-                  {treatment.frequency}
-                </Text>
-              </View>
-            </View>
-          </View>
-        ))}
+        {loading ? (
+          <Text>Loading remedies...</Text>
+        ) : (
+          remedies.length > 0 ? (
+            remedies.map((rec, index) => (
+              <Text key={index} style={styles.treatmentText}>• {rec}</Text>
+            ))
+          ) : (
+            <Text>No remedies available.</Text>
+          )
+        )}
       </View>
 
       {/* Additional Tips */}
@@ -152,7 +133,9 @@ const DiagnosisPage = () => {
   );
 };
 
+
 const styles = StyleSheet.create({
+  // Keep your existing styles here, or you can reuse the original styles
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
@@ -218,51 +201,10 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     flex: 1,
   },
-  treatmentCard: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  treatmentIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  treatmentContent: {
-    flex: 1,
-  },
-  treatmentName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    marginBottom: 4,
-  },
-  treatmentDescription: {
+  treatmentText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
-    marginBottom: 12,
-  },
-  treatmentDetail: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  treatmentDetailText: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    marginLeft: 6,
-    flex: 1,
-  },
-  treatmentDetailLabel: {
-    fontWeight: '600',
     color: COLORS.textPrimary,
+    marginBottom: 8,
   },
   tipsCard: {
     backgroundColor: COLORS.cardBackground,

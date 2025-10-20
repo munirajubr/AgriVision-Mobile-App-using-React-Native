@@ -98,6 +98,13 @@ export default function PagesLayout() {
           headerShown: true,
         }} 
       />
+      <Stack.Screen 
+        name="setupaccount" 
+        options={{
+          title: 'Setup Account',
+          headerShown: true,
+        }} 
+      />
     </Stack>
   );
 }

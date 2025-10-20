@@ -9,21 +9,6 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
   },
-  header: {
-    marginBottom: 32,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: 8,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-  },
   section: {
     marginBottom: 24,
   },
@@ -134,7 +119,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   issueText: {
-    fontSize: 14,
+    fontSize: 20,
     color: '#F44336',
     marginBottom: 4,
   },
@@ -170,6 +155,20 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   analyzingText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  diagnosisButton: {
+    backgroundColor: COLORS.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 12,
+  },
+  diagnosisButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
@@ -230,6 +229,77 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     marginLeft: 12,
     flex: 1,
+  },
+  // Diagnosis Modal Styles
+  diagnosisModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  diagnosisModalContent: {
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  diagnosisModalHeader: {
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  diagnosisModalTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 8,
+  },
+  diagnosisModalSubtitle: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+  },
+  diagnosisTypeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.background,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  diagnosisTypeIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  diagnosisTypeContent: {
+    flex: 1,
+  },
+  diagnosisTypeName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+  },
+  diagnosisTypeDescription: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+  },
+  cancelButton: {
+    marginTop: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
   },
 });
 
