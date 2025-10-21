@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import COLORS from '../../constants/colors';
@@ -7,114 +8,50 @@ const NPKAnalysisPage = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
 
-  // Crop suggestions data
-  const cropSuggestions = [
-    {
-      id: 1,
-      name: 'Rice (Paddy)',
-      suitability: 95,
-      icon: 'leaf',
-      color: '#4CAF50',
-      marketPrice: '₹2,850',
-      priceUnit: 'per quintal',
-      yield: '55-60 quintals',
-      yieldUnit: 'per acre',
-      duration: '120-140 days',
-      investment: '₹45,000',
-      investmentUnit: 'per acre',
-      returns: '₹1,65,000',
-      returnsUnit: 'per acre',
-      profit: '₹1,20,000',
-      profitMargin: '267%',
-      waterRequirement: 'High',
-      season: 'Kharif',
-      reasons: [
-        'Optimal nitrogen levels for paddy cultivation',
-        'pH level suitable for rice growth',
-        'High water availability recommended',
-      ],
-    },
-    {
-      id: 2,
-      name: 'Sugarcane',
-      suitability: 88,
-      icon: 'leaf',
-      color: '#FF9800',
-      marketPrice: '₹3,200',
-      priceUnit: 'per ton',
-      yield: '35-40 tons',
-      yieldUnit: 'per acre',
-      duration: '12-18 months',
-      investment: '₹65,000',
-      investmentUnit: 'per acre',
-      returns: '₹1,20,000',
-      returnsUnit: 'per acre',
-      profit: '₹55,000',
-      profitMargin: '85%',
-      waterRequirement: 'High',
-      season: 'Year-round',
-      reasons: [
-        'Good potassium content for sugar production',
-        'Long-term profitable crop',
-        'Suitable soil pH range',
-      ],
-    },
-    {
-      id: 3,
-      name: 'Wheat',
-      suitability: 82,
-      icon: 'leaf',
-      color: '#FFC107',
-      marketPrice: '₹2,425',
-      priceUnit: 'per quintal',
-      yield: '18-22 quintals',
-      yieldUnit: 'per acre',
-      duration: '110-130 days',
-      investment: '₹28,000',
-      investmentUnit: 'per acre',
-      returns: '₹50,000',
-      returnsUnit: 'per acre',
-      profit: '₹22,000',
-      profitMargin: '79%',
-      waterRequirement: 'Moderate',
-      season: 'Rabi',
-      reasons: [
-        'Moderate nitrogen requirement matches soil',
-        'Good for crop rotation after rice',
-        'Lower water requirement',
-      ],
-    },
-    {
-      id: 4,
-      name: 'Cotton',
-      suitability: 78,
-      icon: 'leaf',
-      color: '#E91E63',
-      marketPrice: '₹6,500',
-      priceUnit: 'per quintal',
-      yield: '12-15 quintals',
-      yieldUnit: 'per acre',
-      duration: '160-180 days',
-      investment: '₹38,000',
-      investmentUnit: 'per acre',
-      returns: '₹85,000',
-      returnsUnit: 'per acre',
-      profit: '₹47,000',
-      profitMargin: '124%',
-      waterRequirement: 'Moderate',
-      season: 'Kharif',
-      reasons: [
-        'High market demand and price',
-        'Suitable for warm climate',
-        'Good profit margins',
-      ],
-    },
-  ];
+  const [cropSuggestions, setCropSuggestions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Retrieve query params or use placeholder if not passed
+  const queryParams = {
+    N: params.N || '',
+    P: params.P || '',
+    K: params.K || '',
+    temperature: params.temperature || '',
+    humidity: params.humidity || '',
+    pH: params.pH || '',
+    rainfall: params.rainfall || '',
+  };
+
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // Replace this URL with your ML API endpoint
+        const response = await fetch('https://your-backend-url.com/api/crop-predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(queryParams),
+        });
+        if (!response.ok) throw new Error('Prediction failed');
+        const data = await response.json();
+        setCropSuggestions(data.crops || []);
+      } catch (err) {
+        setError('Could not load crop predictions');
+        setCropSuggestions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSuggestions();
+    // eslint-disable-next-line
+  }, []);
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      
+
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
@@ -122,8 +59,7 @@ const NPKAnalysisPage = () => {
             <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>Crop Recommendations</Text>
-            <Text style={styles.headerSubtitle}>Based on your soil analysis</Text>
+            <Text style={styles.headerTitle}>NPK Analysis</Text>
           </View>
         </View>
 
@@ -133,19 +69,19 @@ const NPKAnalysisPage = () => {
           <View style={styles.npkContainer}>
             <View style={styles.npkItem}>
               <Text style={styles.npkLabel}>N</Text>
-              <Text style={styles.npkValue}>{params.nitrogen || '245'}</Text>
+              <Text style={styles.npkValue}>{queryParams.N || '---'}</Text>
             </View>
             <View style={styles.npkItem}>
               <Text style={styles.npkLabel}>P</Text>
-              <Text style={styles.npkValue}>{params.phosphorus || '32'}</Text>
+              <Text style={styles.npkValue}>{queryParams.P || '---'}</Text>
             </View>
             <View style={styles.npkItem}>
               <Text style={styles.npkLabel}>K</Text>
-              <Text style={styles.npkValue}>{params.potassium || '180'}</Text>
+              <Text style={styles.npkValue}>{queryParams.K || '---'}</Text>
             </View>
             <View style={styles.npkItem}>
               <Text style={styles.npkLabel}>pH</Text>
-              <Text style={styles.npkValue}>{params.pH || '6.8'}</Text>
+              <Text style={styles.npkValue}>{queryParams.pH || '---'}</Text>
             </View>
           </View>
         </View>
@@ -156,14 +92,23 @@ const NPKAnalysisPage = () => {
           <Text style={styles.sectionSubtitle}>
             Sorted by suitability score based on your soil nutrients
           </Text>
-          
-          {cropSuggestions.map((crop) => (
+
+          {loading && (
+            <View style={{ marginVertical: 18, alignItems: 'center' }}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+              <Text style={{ color: COLORS.textSecondary, marginTop: 8 }}>Loading crop recommendations...</Text>
+            </View>
+          )}
+
+          {error && <Text style={{ color: 'red', textAlign: 'center' }}>{error}</Text>}
+
+          {!loading && !error && cropSuggestions.map((crop) => (
             <View key={crop.id} style={styles.cropCard}>
               {/* Header */}
               <View style={styles.cropHeader}>
                 <View style={styles.cropTitleContainer}>
-                  <View style={[styles.cropIcon, { backgroundColor: `${crop.color}15` }]}>
-                    <Ionicons name={crop.icon} size={24} color={crop.color} />
+                  <View style={[styles.cropIcon, { backgroundColor: `${crop.color || COLORS.primary}15` }]}>
+                    <Ionicons name={crop.icon || 'leaf'} size={24} color={crop.color || COLORS.primary} />
                   </View>
                   <View>
                     <Text style={styles.cropName}>{crop.name}</Text>
@@ -184,21 +129,18 @@ const NPKAnalysisPage = () => {
                   <Text style={styles.financialValue}>{crop.marketPrice}</Text>
                   <Text style={styles.financialUnit}>{crop.priceUnit}</Text>
                 </View>
-
                 <View style={styles.financialItem}>
                   <Ionicons name="stats-chart" size={18} color="#2196F3" />
                   <Text style={styles.financialLabel}>Yield</Text>
                   <Text style={styles.financialValue}>{crop.yield}</Text>
                   <Text style={styles.financialUnit}>{crop.yieldUnit}</Text>
                 </View>
-
                 <View style={styles.financialItem}>
                   <Ionicons name="cash" size={18} color="#FF9800" />
                   <Text style={styles.financialLabel}>Investment</Text>
                   <Text style={styles.financialValue}>{crop.investment}</Text>
                   <Text style={styles.financialUnit}>{crop.investmentUnit}</Text>
                 </View>
-
                 <View style={styles.financialItem}>
                   <Ionicons name="wallet" size={18} color="#9C27B0" />
                   <Text style={styles.financialLabel}>Expected Returns</Text>
@@ -228,7 +170,7 @@ const NPKAnalysisPage = () => {
               {/* Reasons */}
               <View style={styles.reasonsContainer}>
                 <Text style={styles.reasonsTitle}>Why this crop?</Text>
-                {crop.reasons.map((reason, index) => (
+                {crop.reasons && crop.reasons.map((reason, index) => (
                   <View key={index} style={styles.reasonItem}>
                     <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
                     <Text style={styles.reasonText}>{reason}</Text>
@@ -243,7 +185,7 @@ const NPKAnalysisPage = () => {
         <View style={styles.infoCard}>
           <Ionicons name="information-circle" size={24} color={COLORS.primary} />
           <Text style={styles.infoText}>
-            These recommendations are based on your soil's NPK levels, pH, and micronutrient content. 
+            These recommendations are based on your soil's NPK, pH, and weather factors.
             Market prices and yields may vary based on location and season.
           </Text>
         </View>

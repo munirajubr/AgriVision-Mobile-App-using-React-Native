@@ -269,7 +269,7 @@ const PlantAnalysisScreen = () => {
               </TouchableOpacity>
             )}
           </View>
-          Crop Selection
+          <Text>Crop Selection</Text>
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Crop Type</Text>
             <TouchableOpacity
