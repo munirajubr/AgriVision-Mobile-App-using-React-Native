@@ -1,0 +1,135 @@
+import { StyleSheet } from 'react-native';
+import COLORS from '../../constants/colors';
+
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS.background },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 20,
+    paddingTop: 48,
+    backgroundColor: COLORS.cardBackground,
+  },
+  backButton: { marginRight: 12 },
+  headerContent: { flex: 1 },
+  headerTitle: { fontSize: 24, fontWeight: "700", color: COLORS.textPrimary },
+  soilSummary: {
+    backgroundColor: COLORS.cardBackground,
+    marginHorizontal: 20,
+    marginTop: 16,
+    marginBottom: 24,
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  summaryTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: COLORS.textPrimary,
+    marginBottom: 16,
+  },
+  npkContainer: { flexDirection: "row", justifyContent: "space-around" },
+  npkItem: { alignItems: "center" },
+  npkLabel: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginBottom: 8,
+    fontWeight: "600",
+  },
+  npkValue: { fontSize: 20, fontWeight: "700", color: COLORS.primary },
+  section: { paddingHorizontal: 20, marginBottom: 24 },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    marginBottom: 16,
+  },
+  cropCard: {
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  cropCardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  cropInfo: {
+    flexDirection: "column",
+  },
+  cropName: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+  },
+  cropCategory: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: COLORS.textSecondary,
+  },
+  cropStats: { alignItems: "flex-end" },
+  cropYield: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.primary,
+  },
+  cropCardBody: { marginTop: 6 },
+  detailText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+  },
+  descriptionText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: COLORS.textPrimary,
+    marginTop: 8,
+  },
+  infoCard: {
+    flexDirection: "row",
+    backgroundColor: `${COLORS.primary}10`,
+    marginHorizontal: 20,
+    marginBottom: 24,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "flex-start",
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 13,
+    color: COLORS.textPrimary,
+    marginLeft: 12,
+    lineHeight: 20,
+  },
+  homeButton: {
+    backgroundColor: COLORS.primary,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 16,
+    borderRadius: 12,
+    marginHorizontal: 20,
+    marginBottom: 32,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  homeButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 8,
+  },
+});
+
+export default styles;
