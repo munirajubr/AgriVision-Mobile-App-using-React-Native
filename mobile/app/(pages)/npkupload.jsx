@@ -158,8 +158,10 @@ const NPKUploadPage = () => {
             </View>
           ) : (
             <TouchableOpacity
-              style={styles.uploadButton}
+              style={[styles.uploadButton, { opacity: 0.5 }]} 
               onPress={pickDocument}
+              disabled={true} 
+              
             >
               <Ionicons
                 name="cloud-upload-outline"
@@ -486,7 +488,7 @@ const styles = StyleSheet.create({
   },
   separatorOr: {
     marginHorizontal: 10,
-    fontSize: 14,
+    fontSize: 18,
     color: COLORS.placeholderText,
     fontWeight: "600",
   },
