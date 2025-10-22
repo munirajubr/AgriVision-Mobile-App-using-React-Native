@@ -1,7 +1,6 @@
 import { StyleSheet } from 'react-native';
 import COLORS from '../../constants/colors';
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -30,6 +29,72 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.textPrimary,
     marginBottom: 12,
+  },
+  diagnosisCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 14,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+  },
+  cardIconCircle: {
+    backgroundColor: "#F5F6FA",
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+    marginTop: 2,
+  },
+  cardContent: {
+    flex: 1,
+  },
+  cardHeading: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: COLORS.textPrimary,
+    marginBottom: 6,
+  },
+  cardDescription: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    lineHeight: 20,
+  },
+  cardContainer: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 8,
+    padding: 12,
+    marginVertical: 8,
+    backgroundColor: COLORS.cardBackground,
+  },
+  cardTitle: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginBottom: 6,
+    color: COLORS.textPrimary,
+  },
+  cardText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginBottom: 4,
+  },
+  additionalDetails: {
+    marginTop: 10,
+    paddingHorizontal: 6,
+  },
+  bold: {
+    fontWeight: 'bold',
+    color: COLORS.textPrimary,
   },
   symptomText: {
     fontSize: 14,
@@ -73,7 +138,105 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     flex: 1,
   },
+  infoRow: {
+    flexDirection: "row",
+    paddingVertical: 8,
+    borderBottomWidth: 0.5,
+    borderBottomColor: COLORS.border,
+  },
+  infoLabel: {
+    flex: 1,
+    fontWeight: "bold",
+    color: COLORS.textPrimary,
+    fontSize: 15,
+  },
+  infoValue: {
+    flex: 1,
+    color: COLORS.textSecondary,
+    fontSize: 15,
+  },
+  loadingText: {
+    fontSize: 16,
+    textAlign: "center",
+    marginVertical: 12,
+    color: COLORS.textSecondary,
+  },
+  noInfoText: {
+    textAlign: "center",
+    fontSize: 16,
+    marginTop: 20,
+    color: COLORS.textSecondary,
+  },
+  emptyText: {
+    fontSize: 14,
+    fontStyle: 'italic',
+    color: COLORS.textSecondary,
+    marginTop: 4,
+  },
+  detaliedInfoContainer: {
+    paddingHorizontal: 12,
+  },
+  twoColumnContainer: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  paddingHorizontal: 20,
+  marginBottom: 20,
+},
+twoColumnItem: {
+  flex: 1,
+  alignItems: 'center',
+},
+twoColumnLabel: {
+  fontWeight: '700',
+  fontSize: 16,
+  color: COLORS.textPrimary,
+},
+twoColumnValue: {
+  fontSize: 16,
+  color: COLORS.textPrimary,
+  marginTop: 4,
+},
+detailCard: {
+  backgroundColor: COLORS.cardBackground,
+  borderRadius: 12,
+  padding: 16,
+  marginHorizontal: 20,
+  marginBottom: 20,
+  borderWidth: 1,
+  borderColor: COLORS.border,
+},
+detailCardTitle: {
+  fontWeight: '700',
+  fontSize: 16,
+  marginBottom: 8,
+  color: COLORS.textPrimary,
+},
+detailCardDescription: {
+  fontSize: 14,
+  color: COLORS.textSecondary,
+  lineHeight: 20,
+},
+homeButton: {
+    backgroundColor: COLORS.primary,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 16,
+    borderRadius: 12,
+    marginHorizontal: 20,
+    marginBottom: 32,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  homeButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 8,
+  },
 });
-
 
 export default styles;

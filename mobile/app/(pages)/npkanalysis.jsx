@@ -14,6 +14,7 @@ import { FLASK_API_URL } from "../../constants/flaskapi";
 import styles from "../../assets/styles/npkanalysis.styles";
 
 const PREDICT_API_URL = `${FLASK_API_URL}/api/predict`;
+const CROP_API_URL = `${FLASK_API_URL}/api/crop`;
 
 const NPKAnalysisPage = () => {
   const router = useRouter();
@@ -22,6 +23,7 @@ const NPKAnalysisPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [prediction, setPrediction] = useState("");
+  const [cropDetails, setCropDetails] = useState(null);
 
   const queryParams = {
     N: params.N ?? "",
@@ -38,6 +40,7 @@ const NPKAnalysisPage = () => {
       setLoading(true);
       setError(null);
       setPrediction("");
+      setCropDetails(null);
       try {
         const response = await fetch(PREDICT_API_URL, {
           method: "POST",
@@ -48,13 +51,35 @@ const NPKAnalysisPage = () => {
 
         if (response.ok && data.prediction) {
           setPrediction(data.prediction);
+          fetchCropDetails(data.prediction); // Fetch details with prediction name
         } else if (data.error) {
           setError(data.error);
+          setLoading(false);
         } else {
           setError("Prediction failed. Unexpected server response.");
+          setLoading(false);
         }
       } catch (err) {
         setError("Network error: Could not fetch crop prediction.");
+        setLoading(false);
+      }
+    };
+
+    const fetchCropDetails = async (cropName) => {
+      try {
+        const resp = await fetch(CROP_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ crop_name: cropName }),
+        });
+        const cropData = await resp.json();
+        if (resp.ok && cropData.info) {
+          setCropDetails(cropData.info);
+        } else if (cropData.error) {
+          setCropDetails(null);
+        }
+      } catch {
+        setCropDetails(null);
       } finally {
         setLoading(false);
       }
@@ -69,6 +94,7 @@ const NPKAnalysisPage = () => {
       setError("Missing required inputs for prediction.");
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -124,25 +150,32 @@ const NPKAnalysisPage = () => {
             <TouchableOpacity style={styles.cropCard} activeOpacity={0.7}>
               <View style={styles.cropCardHeader}>
                 <View style={styles.cropInfo}>
-                  <Text style={styles.cropName}>{prediction}</Text>
-                  <Text style={styles.cropCategory}>Category Name</Text>
+                  <Text style={styles.cropName}>
+                    {prediction}
+                  </Text>
+                  <Text style={styles.cropCategory}>
+                    {/* {cropDetails?.category ?? "Category Name"} */}
+                    Eggplant
+                  </Text>
                 </View>
                 <View style={styles.cropStats}>
-                  <Text style={styles.cropYield}>-- quintals/acre</Text>
+                  <Text style={styles.cropYield}>
+                    {cropDetails?.yield ? `${cropDetails.yield} quintals/acre` : "-- quintals/acre"}
+                  </Text>
                 </View>
               </View>
-
               <View style={styles.cropCardBody}>
-                <Text style={styles.detailText}>🌱 Season: --</Text>
-                <Text style={styles.detailText}>💰 Avg Price: --</Text>
+                <Text style={styles.detailText}>🌱 Season: {cropDetails?.season ?? "--"}</Text>
+                <Text style={styles.detailText}>💰 Avg Price: {cropDetails?.price ?? "--"}</Text>
               </View>
-
               <Text
                 style={styles.descriptionText}
                 numberOfLines={3}
                 ellipsizeMode="tail"
               >
-                Description about {prediction} crop not available.
+                {cropDetails?.description
+                  ? cropDetails.description
+                  : `Description about ${prediction} crop not available.`}
               </Text>
             </TouchableOpacity>
           )}
@@ -163,7 +196,7 @@ const NPKAnalysisPage = () => {
           activeOpacity={0.8}
         >
           <Ionicons name="home" size={20} color="#fff" />
-          <Text style={styles.homeButtonText}>Back to Home</Text>
+          <Text style={styles.homeButtonText}>Done</Text>
         </TouchableOpacity>
       </ScrollView>
     </>

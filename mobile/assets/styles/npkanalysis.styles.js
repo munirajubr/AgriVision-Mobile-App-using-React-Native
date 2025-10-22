@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   descriptionText: {
     fontSize: 14,
     lineHeight: 20,
-    color: COLORS.textPrimary,
+    color: COLORS.textSecondary,
     marginTop: 8,
   },
   infoCard: {

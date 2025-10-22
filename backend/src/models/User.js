@@ -22,6 +22,46 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    phone: {
+      type: String,
+      default: "",
+    },
+    farmLocation: {
+      type: String,
+      default: "",
+    },
+    farmSize: {
+      type: String,
+      default: "",
+    },
+    experience: {
+      type: String,
+      default: "",
+    },
+    connectedDevices: {
+      type: Number,
+      default: 0,
+    },
+    farmingType: {
+      type: String,
+      default: "",
+    },
+    soilType: {
+      type: String,
+      default: "",
+    },
+    irrigationType: {
+      type: String,
+      default: "",
+    },
+    lastHarvest: {
+      type: String,
+      default: "",
+    },
+    cropsGrown: {
+      type: [String],
+      default: [],
+    },
   },
   { timestamps: true }
 );
@@ -36,7 +76,7 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-// compare password func
+// compare password function
 userSchema.methods.comparePassword = async function (userPassword) {
   return await bcrypt.compare(userPassword, this.password);
 };

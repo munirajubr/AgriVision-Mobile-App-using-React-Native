@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import COLORS from '../../constants/colors';
@@ -16,42 +16,30 @@ const DiagnosisPage = () => {
   const diseaseInput = params.diseaseInput ? JSON.parse(params.diseaseInput) : null;
   const issues = JSON.parse(params.issues || '[]');
 
-  const [symptoms, setSymptoms] = useState([]);
-  const [remedies, setRemedies] = useState([]);
+  const [diseaseInfo, setDiseaseInfo] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (isDiseaseDiagnosis && diseaseInput) {
       setLoading(true);
 
-      fetch(`${FLASK_API_URL}/predict_disease`, {
+      fetch(`${FLASK_API_URL}/api/predict`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(diseaseInput),
       })
         .then(response => response.json())
         .then(data => {
-          if (data.predicted_disease) {
-            setSymptoms(data.symptoms || []);
-
-            if (data.remedies) {
-              const remediesArr = data.remedies
-                .split(/;|\n/)
-                .map(item => item.trim())
-                .filter(item => item.length > 0);
-              setRemedies(remediesArr);
-            } else {
-              setRemedies(['No remedies information available']);
-            }
+          if (data.info) {
+            setDiseaseInfo(data.info);
           } else {
-            setSymptoms([]);
-            setRemedies(['No prediction available']);
+            setDiseaseInfo({});
+            Alert.alert('No detailed info available.');
           }
         })
-        .catch(error => {
+        .catch(() => {
           Alert.alert('Error', 'Failed to fetch disease information.');
-          setSymptoms([]);
-          setRemedies([]);
+          setDiseaseInfo({});
         })
         .finally(() => setLoading(false));
     }
@@ -67,73 +55,62 @@ const DiagnosisPage = () => {
         <Text style={styles.headerTitle}>Disease Diagnosis</Text>
       </View>
 
-      {/* Symptoms Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Detected Symptoms</Text>
-        {loading ? (
-          <Text>Loading...</Text>
-        ) : symptoms.length > 0 ? (
-          symptoms.map((symptom, index) => (
-            <Text key={index} style={styles.symptomText}>
-              • {symptom}
-            </Text>
-          ))
-        ) : (
-          <Text>No symptoms information available.</Text>
-        )}
-      </View>
-
-      {/* Remedies Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recommended Remedies</Text>
-        {loading ? (
-          <Text>Loading remedies...</Text>
-        ) : remedies.length > 0 ? (
-          remedies.map((remedy, index) => (
-            <Text key={index} style={styles.treatmentText}>
-              • {remedy}
-            </Text>
-          ))
-        ) : (
-          <Text>No remedies available.</Text>
-        )}
-      </View>
-
-      {/* Issues Detected Section */}
+      {/* Issues Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Issues Detected</Text>
         {issues.length > 0 ? (
-          issues.map((issue, index) => (
-            <View key={index} style={styles.issueCard}>
+          issues.map((issue, idx) => (
+            <View key={idx} style={styles.issueCard}>
               <Ionicons name="alert-circle" size={20} color="#F44336" />
               <Text style={styles.issueText}>{issue}</Text>
             </View>
           ))
         ) : (
-          <Text>No issues detected.</Text>
+          <Text style={styles.emptyText}>No issues detected.</Text>
         )}
       </View>
 
-      {/* Additional Tips Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Additional Tips</Text>
-        <View style={styles.tipsCard}>
-          <View style={styles.tipItem}>
-            <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
-            <Text style={styles.tipText}>Monitor plant daily for changes</Text>
-          </View>
-          <View style={styles.tipItem}>
-            <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
-            <Text style={styles.tipText}>Ensure proper drainage in soil</Text>
-          </View>
-          <View style={styles.tipItem}>
-            <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
-            <Text style={styles.tipText}>Remove affected leaves if necessary</Text>
-          </View>
+      {/* Two column summary like Days to Recovery and Severity Level */}
+      <View style={styles.twoColumnContainer}>
+        <View style={styles.twoColumnItem}>
+          <Text style={styles.twoColumnLabel}>Days to Recovery</Text>
+          <Text style={styles.twoColumnValue}>
+            {diseaseInfo?.['Days to Recovery'] ?? '-'}
+          </Text>
+        </View>
+        <View style={styles.twoColumnItem}>
+          <Text style={styles.twoColumnLabel}>Severity Level</Text>
+          <Text style={styles.twoColumnValue}>
+            {diseaseInfo?.['Severity Level'] ?? '-'}
+          </Text>
         </View>
       </View>
+
+      {/* Cards for other detailed sections */}
+      {[
+        { label: 'Symptoms Description', key: 'Symptoms Description' },
+        { label: 'Impact on Yield', key: 'Impact on Yield' },
+        { label: 'Natural Resolution', key: 'Natural Resolution' },
+        { label: 'Chemical Resolution', key: 'Chemical Resolution' },
+      ].map(({ label, key }) => (
+        <View key={label} style={styles.detailCard}>
+          <Text style={styles.detailCardTitle}>{label}</Text>
+          <Text style={styles.detailCardDescription}>
+            {diseaseInfo?.[key] ?? `${label} details here`}
+          </Text>
+        </View>
+      ))}
+      {/* Back to Home Button */}
+              <TouchableOpacity
+                style={styles.homeButton}
+                onPress={() => router.push("/(tabs)")}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="home" size={20} color="#fff" />
+                <Text style={styles.homeButtonText}>Done</Text>
+              </TouchableOpacity>
     </ScrollView>
   );
 };
-
+ 
 export default DiagnosisPage;

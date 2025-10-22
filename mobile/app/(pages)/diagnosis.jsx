@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   Image,
   Alert,
   ScrollView,
-  Modal,
   ActivityIndicator,
   SafeAreaView,
 } from "react-native";
@@ -16,51 +15,23 @@ import { useRouter } from "expo-router";
 import COLORS from "../../constants/colors";
 import styles from "../../assets/styles/diagnosis.styles";
 
-const PLANT_ID_KEY = process.env.PLANT_ID_API;
-const PLANT_ID_URL = "https://api.plant.id/v2/identify";
+const CROP_HEALTH_KEY = process.env.CROP_HEALTH_API;
+const CROP_HEALTH_URL = "https://crop.kindwise.com/api/v1/identification";
 
 const PlantAnalysisScreen = () => {
   const router = useRouter();
+
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedImageData, setSelectedImageData] = useState(null);
-  const [selectedCrop, setSelectedCrop] = useState("");
-  const [selectedPart, setSelectedPart] = useState("");
-  const [showCropModal, setShowCropModal] = useState(false);
-  const [showPartModal, setShowPartModal] = useState(false);
-  const [showDiagnosisModal, setShowDiagnosisModal] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
-
-  const cropTypes = [
-    { id: "eggplant", name: "Eggplant", icon: "leaf-outline" },
-    { id: "rice", name: "Rice", icon: "leaf-outline" },
-    { id: "wheat", name: "Wheat", icon: "leaf-outline" },
-    { id: "corn", name: "Corn", icon: "leaf-outline" },
-    { id: "tomato", name: "Tomato", icon: "leaf-outline" },
-    { id: "potato", name: "Potato", icon: "leaf-outline" },
-    { id: "cotton", name: "Cotton", icon: "leaf-outline" },
-    { id: "sugarcane", name: "Sugarcane", icon: "leaf-outline" },
-    { id: "soybean", name: "Soybean", icon: "leaf-outline" },
-  ];
-
-  const plantParts = [
-    { id: "leaf", name: "Leaf", icon: "leaf-outline" },
-    { id: "fruit", name: "Fruit", icon: "leaf-outline" },
-    { id: "flower", name: "Flower", icon: "flower-outline" },
-    { id: "stem", name: "Stem", icon: "git-branch-outline" },
-    { id: "root", name: "Root", icon: "git-network-outline" },
-    { id: "seed", name: "Seed", icon: "ellipse-outline" },
-  ];
 
   const requestPermissions = async () => {
     try {
       const camera = await ImagePicker.requestCameraPermissionsAsync();
       const media = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (camera?.status !== "granted" || media?.status !== "granted") {
-        Alert.alert(
-          "Permission Required",
-          "Camera and photo library access are required."
-        );
+      if (camera.status !== "granted" || media.status !== "granted") {
+        Alert.alert("Permission Required", "Camera and photo library access are required.");
         return false;
       }
       return true;
@@ -71,8 +42,7 @@ const PlantAnalysisScreen = () => {
   };
 
   const openCamera = async () => {
-    const ok = await requestPermissions();
-    if (!ok) return;
+    if (!(await requestPermissions())) return;
     try {
       const res = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
@@ -90,8 +60,7 @@ const PlantAnalysisScreen = () => {
   };
 
   const openImageLibrary = async () => {
-    const ok = await requestPermissions();
-    if (!ok) return;
+    if (!(await requestPermissions())) return;
     try {
       const res = await ImagePicker.launchImageLibraryAsync({
         allowsEditing: true,
@@ -116,83 +85,70 @@ const PlantAnalysisScreen = () => {
     ]);
   };
 
-  const getCropName = (id) => cropTypes.find((c) => c.id === id)?.name || id;
-  const getPartName = (id) => plantParts.find((p) => p.id === id)?.name || id;
+  useEffect(() => {
+    if (selectedImageData) {
+      submitForAnalysis();
+    }
+  }, [selectedImageData]);
 
-  // DISEASE IDENTIFICATION USING Plant.id API
   const submitForAnalysis = async () => {
-    if (!selectedImageData || !selectedCrop || !selectedPart) {
-      Alert.alert(
-        "Missing Information",
-        "Please select an image, crop type, and plant part."
-      );
+    if (!selectedImageData) return;
+    if (!CROP_HEALTH_KEY) {
+      Alert.alert("Configuration Missing", "Crop.health API KEY is missing.");
       return;
     }
-    if (!PLANT_ID_KEY) {
-      Alert.alert("Configuration Missing", "Plant.id API KEY is missing.");
-      return;
-    }
+
     setIsAnalyzing(true);
     setAnalysisResult(null);
 
     try {
-      const organs = [getPartName(selectedPart).toLowerCase()];
-
       const body = {
         images: [`data:image/jpeg;base64,${selectedImageData}`],
-        organs,
-        // You can add additional optional fields like "disease_details": true, "all_results": true
       };
 
-      const response = await fetch(PLANT_ID_URL, {
+      const response = await fetch(CROP_HEALTH_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Api-Key": PLANT_ID_KEY,
+          "Api-Key": CROP_HEALTH_KEY,
         },
         body: JSON.stringify(body),
       });
 
-      const result = await response.json();
-
-      let diseaseLabel = "Unknown";
-      let confidenceLabel = 0;
-
-      // Check if 'disease' suggestion is present
-      if (
-        result?.health_assessment?.is_healthy === false &&
-        Array.isArray(result.disease_suggestions) &&
-        result.disease_suggestions.length > 0
-      ) {
-        const topDisease = result.disease_suggestions[0];
-        diseaseLabel =
-          topDisease.name ||
-          (topDisease.details &&
-            topDisease.details.common_names &&
-            topDisease.details.common_names[0]) ||
-          "Plant Disease";
-        confidenceLabel = Math.round((topDisease.probability || 0) * 100);
-      } else if (
-        result?.is_plant === true &&
-        result?.suggestions &&
-        result.suggestions.length > 0
-      ) {
-        // fallback to plant name
-        diseaseLabel = result.suggestions[0].plant_name || "Identified Plant";
-        confidenceLabel = Math.round(
-          (result.suggestions[0].probability || 0) * 100
-        );
-      } else if (result.health_assessment?.is_healthy === true) {
-        diseaseLabel = "Healthy";
-        confidenceLabel = 99;
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("API error:", errorText);
+        throw new Error(`API request failed with status ${response.status}, body: ${errorText}`);
       }
 
-      let health = diseaseLabel.toLowerCase().includes("healthy")
-        ? "Good"
-        : "Moderate";
+      const result = await response.json();
+      // console.log("Full API response:", result); 
+
+      const diseaseSuggestions = result.result?.disease?.suggestions || [];
+      const cropSuggestions = result.result?.crop?.suggestions || [];
+      const isPlant = result.result?.is_plant;
+
+      let diseaseLabel = "";
+      let confidenceLabel = 0;
+
+      if (diseaseSuggestions.length > 0) {
+        const topDisease = diseaseSuggestions[0];
+        diseaseLabel =
+          topDisease.name ||
+          (topDisease.details?.common_names?.[0]) ||
+          "Plant Disease";
+        confidenceLabel = Math.round((topDisease.probability || 0) * 100);
+      } else if (isPlant?.binary === true && cropSuggestions.length > 0) {
+        diseaseLabel = cropSuggestions[0].plant_name || "Identified Plant";
+        confidenceLabel = Math.round((cropSuggestions[0].probability || 0) * 100);
+      } else {
+        diseaseLabel = "Unknown";
+      }
+
+      const healthStatus = diseaseLabel.toLowerCase().includes("healthy") ? "Good" : "Moderate";
 
       setAnalysisResult({
-        health,
+        health: healthStatus,
         confidence: confidenceLabel,
         issues: [diseaseLabel],
         recommendations: [],
@@ -204,13 +160,12 @@ const PlantAnalysisScreen = () => {
     }
   };
 
-  const handleDiagnosisType = (type) => {
-    setShowDiagnosisModal(false);
+  const navigateToDiagnosis = () => {
     if (!analysisResult) return;
     const params = {
-      diagnosisType: type,
-      crop: selectedCrop,
-      part: selectedPart,
+      diagnosisType: "natural",
+      crop: "",
+      part: "",
       health: analysisResult.health,
       confidence: String(analysisResult.confidence),
       issues: JSON.stringify(analysisResult.issues),
@@ -220,14 +175,6 @@ const PlantAnalysisScreen = () => {
       .map((k) => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`)
       .join("&");
     router.push(`/(pages)/diseasediagnosis?${qs}`);
-  };
-
-  const resetForm = () => {
-    setSelectedImage(null);
-    setSelectedImageData(null);
-    setSelectedCrop("");
-    setSelectedPart("");
-    setAnalysisResult(null);
   };
 
   return (
@@ -269,60 +216,6 @@ const PlantAnalysisScreen = () => {
               </TouchableOpacity>
             )}
           </View>
-          <Text>Crop Selection</Text>
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Crop Type</Text>
-            <TouchableOpacity
-              style={styles.selectionButton}
-              onPress={() => setShowCropModal(true)}
-              disabled={isAnalyzing}
-            >
-              <View style={styles.selectionLeft}>
-                <Ionicons
-                  name="leaf-outline"
-                  size={24}
-                  color={COLORS.primary}
-                />
-                <Text style={styles.selectionText}>
-                  {selectedCrop
-                    ? getCropName(selectedCrop)
-                    : "Select Crop Type"}
-                </Text>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={COLORS.textSecondary}
-              />
-            </TouchableOpacity>
-          </View>
-          {/* Plant Part Selection */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Plant Part</Text>
-            <TouchableOpacity
-              style={styles.selectionButton}
-              onPress={() => setShowPartModal(true)}
-              disabled={isAnalyzing}
-            >
-              <View style={styles.selectionLeft}>
-                <Ionicons
-                  name="git-branch-outline"
-                  size={24}
-                  color={COLORS.primary}
-                />
-                <Text style={styles.selectionText}>
-                  {selectedPart
-                    ? getPartName(selectedPart)
-                    : "Select Plant Part"}
-                </Text>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={COLORS.textSecondary}
-              />
-            </TouchableOpacity>
-          </View>
           {/* Analysis Result */}
           {analysisResult && (
             <View style={styles.section}>
@@ -338,7 +231,9 @@ const PlantAnalysisScreen = () => {
                       }
                       size={24}
                       color={
-                        analysisResult.health === "Good" ? "#4CAF50" : "#FF9800"
+                        analysisResult.health === "Good"
+                          ? "#4CAF50"
+                          : "#FF9800"
                       }
                     />
                     <Text style={styles.healthText}>
@@ -347,9 +242,7 @@ const PlantAnalysisScreen = () => {
                   </View>
                 </View>
                 <View style={styles.resultSection}>
-                  <Text style={styles.resultSectionTitle}>
-                    Predicted Disease
-                  </Text>
+                  <Text style={styles.resultSectionTitle}>Predicted Disease</Text>
                   {analysisResult.issues.map((item, idx) => (
                     <Text key={idx} style={styles.issueText}>
                       • {item}
@@ -361,208 +254,29 @@ const PlantAnalysisScreen = () => {
           )}
           {/* Action Buttons */}
           <View style={styles.buttonContainer}>
-            {!analysisResult ? (
-              isAnalyzing ? (
-                <View style={styles.analyzingButton}>
-                  <ActivityIndicator size="small" color="#fff" />
-                  <Text style={styles.analyzingText}>Analyzing...</Text>
-                </View>
+            <TouchableOpacity
+              style={styles.analyzeButton}
+              onPress={submitForAnalysis}
+              disabled={isAnalyzing || !selectedImageData}
+            >
+              {isAnalyzing ? (
+                <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <TouchableOpacity
-                  style={styles.analyzeButton}
-                  onPress={submitForAnalysis}
-                  disabled={isAnalyzing}
-                >
-                  <Ionicons name="search-outline" size={20} color="#fff" />
-                  <Text style={styles.analyzeButtonText}>Analyse</Text>
-                </TouchableOpacity>
-              )
-            ) : (
+                <Ionicons name="search-outline" size={20} color="#fff" />
+              )}
+              <Text style={styles.analyzeButtonText}>Analyse</Text>
+            </TouchableOpacity>
+            {analysisResult && (
               <TouchableOpacity
                 style={styles.diagnosisButton}
-                onPress={() => setShowDiagnosisModal(true)}
+                onPress={navigateToDiagnosis}
                 disabled={isAnalyzing}
               >
                 <Ionicons name="medical-outline" size={20} color="#fff" />
                 <Text style={styles.diagnosisButtonText}>Get Diagnosis</Text>
               </TouchableOpacity>
             )}
-            {(selectedImage || analysisResult) && (
-              <TouchableOpacity
-                style={styles.resetButton}
-                onPress={resetForm}
-                disabled={isAnalyzing}
-              >
-                <Ionicons
-                  name="refresh-outline"
-                  size={20}
-                  color={COLORS.primary}
-                />
-                <Text style={styles.resetButtonText}>Start Over</Text>
-              </TouchableOpacity>
-            )}
           </View>
-          {/* Crop Modal */}
-          <Modal visible={showCropModal} animationType="slide" transparent>
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalContent}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>Select Crop Type</Text>
-                  <TouchableOpacity onPress={() => setShowCropModal(false)}>
-                    <Ionicons
-                      name="close"
-                      size={24}
-                      color={COLORS.textPrimary}
-                    />
-                  </TouchableOpacity>
-                </View>
-                <ScrollView style={styles.modalList}>
-                  {cropTypes.map((crop) => (
-                    <TouchableOpacity
-                      key={crop.id}
-                      style={styles.modalItem}
-                      onPress={() => {
-                        setSelectedCrop(crop.id);
-                        setShowCropModal(false);
-                      }}
-                    >
-                      <Ionicons
-                        name={crop.icon}
-                        size={24}
-                        color={COLORS.primary}
-                      />
-                      <Text style={styles.modalItemText}>{crop.name}</Text>
-                      {selectedCrop === crop.id && (
-                        <Ionicons
-                          name="checkmark"
-                          size={20}
-                          color={COLORS.primary}
-                        />
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            </View>
-          </Modal>
-          {/* Part Modal */}
-          <Modal visible={showPartModal} animationType="slide" transparent>
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalContent}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>Select Plant Part</Text>
-                  <TouchableOpacity onPress={() => setShowPartModal(false)}>
-                    <Ionicons
-                      name="close"
-                      size={24}
-                      color={COLORS.textPrimary}
-                    />
-                  </TouchableOpacity>
-                </View>
-                <ScrollView style={styles.modalList}>
-                  {plantParts.map((part) => (
-                    <TouchableOpacity
-                      key={part.id}
-                      style={styles.modalItem}
-                      onPress={() => {
-                        setSelectedPart(part.id);
-                        setShowPartModal(false);
-                      }}
-                    >
-                      <Ionicons
-                        name={part.icon}
-                        size={24}
-                        color={COLORS.primary}
-                      />
-                      <Text style={styles.modalItemText}>{part.name}</Text>
-                      {selectedPart === part.id && (
-                        <Ionicons
-                          name="checkmark"
-                          size={20}
-                          color={COLORS.primary}
-                        />
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            </View>
-          </Modal>
-          {/* Diagnosis Modal */}
-          <Modal visible={showDiagnosisModal} animationType="fade" transparent>
-            <View style={styles.diagnosisModalOverlay}>
-              <View style={styles.diagnosisModalContent}>
-                <View style={styles.diagnosisModalHeader}>
-                  <Text style={styles.diagnosisModalTitle}>
-                    Select Diagnosis Type
-                  </Text>
-                  <Text style={styles.diagnosisModalSubtitle}>
-                    Choose your preferred treatment method
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.diagnosisTypeCard}
-                  onPress={() => handleDiagnosisType("natural")}
-                  activeOpacity={0.7}
-                >
-                  <View
-                    style={[
-                      styles.diagnosisTypeIcon,
-                      { backgroundColor: "#4CAF5020" },
-                    ]}
-                  >
-                    <Ionicons name="leaf" size={32} color="#4CAF50" />
-                  </View>
-                  <View style={styles.diagnosisTypeContent}>
-                    <Text style={styles.diagnosisTypeName}>
-                      Natural Diagnosis
-                    </Text>
-                    <Text style={styles.diagnosisTypeDescription}>
-                      Organic and eco-friendly treatment solutions
-                    </Text>
-                  </View>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={24}
-                    color={COLORS.textSecondary}
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.diagnosisTypeCard}
-                  onPress={() => handleDiagnosisType("chemical")}
-                  activeOpacity={0.7}
-                >
-                  <View
-                    style={[
-                      styles.diagnosisTypeIcon,
-                      { backgroundColor: "#2196F320" },
-                    ]}
-                  >
-                    <Ionicons name="flask" size={32} color="#2196F3" />
-                  </View>
-                  <View style={styles.diagnosisTypeContent}>
-                    <Text style={styles.diagnosisTypeName}>
-                      Chemical Diagnosis
-                    </Text>
-                    <Text style={styles.diagnosisTypeDescription}>
-                      Synthetic pesticides and fertilizers
-                    </Text>
-                  </View>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={24}
-                    color={COLORS.textSecondary}
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={() => setShowDiagnosisModal(false)}
-                >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
         </View>
       </ScrollView>
     </SafeAreaView>
