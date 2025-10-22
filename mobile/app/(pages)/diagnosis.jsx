@@ -64,7 +64,6 @@ const PlantAnalysisScreen = () => {
     try {
       const res = await ImagePicker.launchImageLibraryAsync({
         allowsEditing: true,
-        aspect: [1, 1],
         quality: 0.8,
         base64: true,
       });

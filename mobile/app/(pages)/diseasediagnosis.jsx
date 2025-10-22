@@ -10,40 +10,67 @@ const DiagnosisPage = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
 
+  console.log("Route params:", params);
+
   const diagnosisType = params.diagnosisType;
   const isDiseaseDiagnosis = diagnosisType === 'disease';
-
+  const decodedIssues = JSON.parse(params.issues || '[]');
   const diseaseInput = params.diseaseInput ? JSON.parse(params.diseaseInput) : null;
-  const issues = JSON.parse(params.issues || '[]');
+
+  const diseaseName = diseaseInput?.diseaseName || (decodedIssues.length > 0 ? decodedIssues[0] : null);
 
   const [diseaseInfo, setDiseaseInfo] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const getDisplayText = (value) => {
+    if (value === null || value === undefined || value === '') {
+      return 'Details not available';
+    }
+    return String(value);
+  };
 
   useEffect(() => {
-    if (isDiseaseDiagnosis && diseaseInput) {
-      setLoading(true);
+    const fetchDiseaseInfo = async () => {
+      if (!diseaseName) {
+        setError('No disease name found in input or issues.');
+        setDiseaseInfo(null);
+        setLoading(false);
+        return;
+      }
 
-      fetch(`${FLASK_API_URL}/api/predict`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(diseaseInput),
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.info) {
-            setDiseaseInfo(data.info);
-          } else {
-            setDiseaseInfo({});
-            Alert.alert('No detailed info available.');
-          }
-        })
-        .catch(() => {
-          Alert.alert('Error', 'Failed to fetch disease information.');
-          setDiseaseInfo({});
-        })
-        .finally(() => setLoading(false));
+      setLoading(true);
+      setError(null);
+      setDiseaseInfo(null);
+
+      try {
+        const res = await fetch(`${FLASK_API_URL}/api/disease`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ disease_name: diseaseName }),
+        });
+
+        const data = await res.json();
+        console.log("API response data:", data);
+
+        if (res.ok && data.info && Object.keys(data.info).length > 0) {
+          setDiseaseInfo(data.info);
+        } else if (data.error) {
+          setError(data.error);
+        } else {
+          setError('No detailed info available.');
+        }
+      } catch {
+        setError('Failed to fetch disease information.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isDiseaseDiagnosis || diagnosisType === 'natural') {
+      fetchDiseaseInfo();
     }
-  }, [diseaseInput, isDiseaseDiagnosis]);
+  }, [diseaseName, isDiseaseDiagnosis, diagnosisType]);
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -55,11 +82,11 @@ const DiagnosisPage = () => {
         <Text style={styles.headerTitle}>Disease Diagnosis</Text>
       </View>
 
-      {/* Issues Section */}
+      {/* Issues Detected */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Issues Detected</Text>
-        {issues.length > 0 ? (
-          issues.map((issue, idx) => (
+        {decodedIssues.length > 0 ? (
+          decodedIssues.map((issue, idx) => (
             <View key={idx} style={styles.issueCard}>
               <Ionicons name="alert-circle" size={20} color="#F44336" />
               <Text style={styles.issueText}>{issue}</Text>
@@ -70,47 +97,70 @@ const DiagnosisPage = () => {
         )}
       </View>
 
-      {/* Two column summary like Days to Recovery and Severity Level */}
-      <View style={styles.twoColumnContainer}>
-        <View style={styles.twoColumnItem}>
-          <Text style={styles.twoColumnLabel}>Days to Recovery</Text>
-          <Text style={styles.twoColumnValue}>
-            {diseaseInfo?.['Days to Recovery'] ?? '-'}
-          </Text>
+      {/* Days to Recovery and Impact on Yield - top summary */}
+      {diseaseInfo && !loading && !error && (
+        <View style={[styles.section, { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 10 }]}>
+          <View style={{ alignItems: 'center' }}>
+            <Text style={styles.twoColumnLabel}>
+              {getDisplayText(diseaseInfo['Days to Recovery'])}
+            </Text>
+            <Text style={styles.twoColumnValue}>Days to Recovery</Text>
+          </View>
+          <View style={{ alignItems: 'center' }}>
+            <Text style={styles.twoColumnLabel}>
+              {getDisplayText(diseaseInfo['Impact on Yield'])}
+            </Text>
+            <Text style={styles.twoColumnValue}>Impact</Text>
+          </View>
         </View>
-        <View style={styles.twoColumnItem}>
-          <Text style={styles.twoColumnLabel}>Severity Level</Text>
-          <Text style={styles.twoColumnValue}>
-            {diseaseInfo?.['Severity Level'] ?? '-'}
-          </Text>
-        </View>
-      </View>
+      )}
 
-      {/* Cards for other detailed sections */}
-      {[
-        { label: 'Symptoms Description', key: 'Symptoms Description' },
-        { label: 'Impact on Yield', key: 'Impact on Yield' },
-        { label: 'Natural Resolution', key: 'Natural Resolution' },
-        { label: 'Chemical Resolution', key: 'Chemical Resolution' },
-      ].map(({ label, key }) => (
-        <View key={label} style={styles.detailCard}>
-          <Text style={styles.detailCardTitle}>{label}</Text>
-          <Text style={styles.detailCardDescription}>
-            {diseaseInfo?.[key] ?? `${label} details here`}
-          </Text>
+      {/* Loading and Error */}
+      {loading && (
+        <View style={{ padding: 20 }}>
+          <Text style={{ textAlign: 'center' }}>Loading disease details...</Text>
         </View>
-      ))}
-      {/* Back to Home Button */}
-              <TouchableOpacity
-                style={styles.homeButton}
-                onPress={() => router.push("/(tabs)")}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="home" size={20} color="#fff" />
-                <Text style={styles.homeButtonText}>Done</Text>
-              </TouchableOpacity>
+      )}
+      {!loading && error && (
+        <Text style={{ color: 'red', textAlign: 'center', padding: 10 }}>{error}</Text>
+      )}
+
+      {/* Disease Info */}
+      {!loading && !error && (
+        diseaseInfo && Object.keys(diseaseInfo).length > 0 ? (
+          <>
+
+            {[  
+              { label: 'Symptoms Description', key: 'Symptoms Description' },
+              { label: 'Natural Resolution', key: 'Natural Resolution' },
+              { label: 'Chemical Resolution', key: 'Chemical Resolution' },
+              { label: 'Severity Level', key: 'Severity Level' },
+            ].map(({ label, key }) => (
+              <View key={key} style={styles.detailCard}>
+                <Text style={styles.detailCardTitle}>{label}</Text>
+                <Text style={styles.detailCardDescription}>
+                  {getDisplayText(diseaseInfo[key])}
+                </Text>
+              </View>
+            ))}
+          </>
+        ) : (
+          <Text style={[styles.emptyText, { padding: 20, textAlign: 'center' }]}>
+            No detailed disease information available.
+          </Text>
+        )
+      )}
+
+      {/* Done Button */}
+      <TouchableOpacity
+        style={styles.homeButton}
+        onPress={() => router.push('/(tabs)')}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.homeButtonText}>Done</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 };
- 
+
 export default DiagnosisPage;
