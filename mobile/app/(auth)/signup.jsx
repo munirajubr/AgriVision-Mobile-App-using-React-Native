@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -11,7 +12,6 @@ import {
 import styles from "../../assets/styles/signup.styles";
 import { Ionicons } from "@expo/vector-icons";
 import COLORS from "../../constants/colors";
-import { useState } from "react";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "../../store/authStore";
 
@@ -21,15 +21,26 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const { user, isLoading, register, token } = useAuthStore();
+  const { isLoading, register } = useAuthStore();
 
   const router = useRouter();
 
   const handleSignUp = async () => {
-    const result = await register(username, email, password);
+  if (!username || !email || !password) {
+    Alert.alert("Error", "Please fill in all fields.");
+    return;
+  }
 
-    if (!result.success) Alert.alert("Error", result.error);
-  };
+  const result = await register(username, email, password);
+
+  if (!result.success) {
+  Alert.alert("Error", result.error);
+} else {
+  console.log("Navigating to /setup");
+  router.push("/setup");
+}
+};
+
 
   return (
     <KeyboardAvoidingView
@@ -40,8 +51,8 @@ export default function Signup() {
         <View style={styles.card}>
           {/* HEADER */}
           <View style={styles.header}>
-            <Text style={styles.title}>BookWorm🐛</Text>
-            <Text style={styles.subtitle}>Share your favorite reads</Text>
+            <Text style={styles.title}>AgriVision</Text>
+            <Text style={styles.subtitle}>A Smart Agriculture App</Text>
           </View>
 
           <View style={styles.formContainer}>
@@ -120,7 +131,11 @@ export default function Signup() {
             </View>
 
             {/* SIGNUP BUTTON */}
-            <TouchableOpacity style={styles.button} onPress={handleSignUp} disabled={isLoading}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handleSignUp}
+              disabled={isLoading}
+            >
               {isLoading ? (
                 <ActivityIndicator color="#fff" />
               ) : (

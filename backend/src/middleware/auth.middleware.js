@@ -10,37 +10,32 @@ import User from "../models/User.js"; // Assuming the User model is here
  */
 const protect = async (req, res, next) => {
   try {
-    // 1. Get token from the 'Authorization' header
-    // Expected format: "Bearer <token>"
+    // 1. Get token from header
     const authHeader = req.header("Authorization");
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ message: "No authentication token provided, access denied" });
     }
-
     const token = authHeader.replace("Bearer ", "");
 
     // 2. Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // decoded.userId must match what was signed in payload
 
-    // 3. Find user and exclude the password field
-    // decoded.userId must match the property name used when the token was signed
+    // 3. Fetch user, exclude password
     const user = await User.findById(decoded.userId).select("-password");
-    
     if (!user) {
       return res.status(401).json({ message: "Token is not valid or user no longer exists" });
     }
 
-    // 4. Attach user object to the request
+    // 4. Attach user object to req
     req.user = user;
-    
-    // 5. Continue to the next middleware/route handler
+
+    // 5. Next handler
     next();
   } catch (error) {
-    // Handle specific JWT errors (e.g., token expired, malformed)
     console.error("Authentication error:", error.message);
     res.status(401).json({ message: "Not authorized, token failed or expired" });
   }
 };
 
-export { protect }; // Export the function as 'protect' for cleaner imports
+export { protect };

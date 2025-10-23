@@ -1,10 +1,8 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {API_URL} from "../constants/api"
+import { API_URL } from "../constants/api";
 
-// const API_URL = "https://agrivision-mobile-app-using-react-native.onrender.com";
-
-export const useAuthStore = create((set) => ({
+export const useAuthStore = create((set, get) => ({
   user: null,
   token: null,
   isLoading: false,
@@ -19,11 +17,9 @@ export const useAuthStore = create((set) => ({
         body: JSON.stringify({ username, email, password }),
       });
 
-      const responseClone = response.clone();
-
       let data;
       try {
-        data = await responseClone.json();
+        data = await response.json();
       } catch {
         const text = await response.text();
         throw new Error(text || "Invalid server response");
@@ -54,11 +50,9 @@ export const useAuthStore = create((set) => ({
         body: JSON.stringify({ email, password }),
       });
 
-      const responseClone = response.clone();
-
       let data;
       try {
-        data = await responseClone.json();
+        data = await response.json();
       } catch {
         const text = await response.text();
         throw new Error(text || "Invalid server response");
@@ -72,6 +66,45 @@ export const useAuthStore = create((set) => ({
       await AsyncStorage.setItem("token", data.token);
 
       set({ user: data.user, token: data.token, isLoading: false });
+
+      return { success: true };
+    } catch (error) {
+      set({ isLoading: false });
+      return { success: false, error: error.message };
+    }
+  },
+
+  setupProfile: async (profileDetails) => {
+    set({ isLoading: true });
+    try {
+      const token = get().token;
+      if (!token) {
+        throw new Error("User not authenticated");
+      }
+
+      const response = await fetch(`${API_URL}/api/auth/setup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(profileDetails),
+      });
+
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        const text = await response.text();
+        throw new Error(text || "Invalid server response");
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || "Setup failed");
+      }
+
+      await AsyncStorage.setItem("user", JSON.stringify(data.user));
+      set({ user: data.user, isLoading: false });
 
       return { success: true };
     } catch (error) {

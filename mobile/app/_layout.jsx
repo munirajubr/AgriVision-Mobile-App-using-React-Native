@@ -27,13 +27,27 @@ export default function RootLayout() {
     checkAuth();
   }, []);
 
-  // handle navigation based on the auth state
+  // handle navigation based on the auth state and user profile completion
   useEffect(() => {
     const inAuthScreen = segments[0] === "(auth)";
     const isSignedIn = user && token;
 
-    if (!isSignedIn && !inAuthScreen) router.replace("/(auth)");
-    else if (isSignedIn && inAuthScreen) router.replace("/(tabs)");
+    if (!isSignedIn && !inAuthScreen) {
+      // User not signed in and not in auth route, redirect to auth
+      router.replace("/(auth)");
+    } else if (isSignedIn) {
+      if (!user.isProfileComplete) {
+        // User signed in but profile incomplete => redirect to setup page
+        if (!segments.includes("setup")) {
+          router.replace("/(auth)/setup");
+        }
+      } else {
+        // User signed in and profile complete => redirect away from auth screens
+        if (inAuthScreen) {
+          router.replace("/(tabs)");
+        }
+      }
+    }
   }, [user, token, segments]);
 
   return (
@@ -48,6 +62,7 @@ export default function RootLayout() {
     </SafeAreaProvider>
   );
 }
+
 
 
 // import { SplashScreen, Stack } from "expo-router";
