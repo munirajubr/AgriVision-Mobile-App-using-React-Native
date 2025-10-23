@@ -126,7 +126,7 @@ const InfoItem = ({ icon, color, label, value }) => (
     <Ionicons name={icon} size={20} color={color} />
     <View style={styles.infoTextContainer}>
       <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value}</Text>
+      <Text>{value}</Text>
     </View>
   </View>
 );
