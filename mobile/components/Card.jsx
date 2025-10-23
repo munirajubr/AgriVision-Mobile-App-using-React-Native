@@ -16,23 +16,24 @@ const Card = ({ image, icon, title, link, variant = 'horizontal', iconColor }) =
 
   // Large card with centered image (for Diagnosis)
   if (variant === 'large') {
-    return (
-      <TouchableOpacity 
-        style={styles.largeCard} 
-        onPress={handlePress}
-        activeOpacity={0.8}
-      >
-        {image && (
-          <Image 
-            source={image}
-            style={styles.largeImage}
-            resizeMode="contain"
-          />
-        )}
-        <Text style={styles.largeTitle}>{title}</Text>
-      </TouchableOpacity>
-    );
-  }
+  return (
+    <TouchableOpacity
+      style={styles.largeCard}
+      onPress={handlePress}
+      activeOpacity={0.8}
+    >
+      {image && (
+        <Image
+          source={image}
+          style={styles.largeImage}
+          resizeMode="cover"  // CHANGE to cover to fill fully
+        />
+      )}
+      <Text style={styles.largeTitle}>{title}</Text>
+    </TouchableOpacity>
+  );
+}
+
 
   // Horizontal card with icon on left (for others)
   return (

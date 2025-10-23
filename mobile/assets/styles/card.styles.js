@@ -24,8 +24,8 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   largeImage: {
-    width: 100,
-    height: 100,
+    width: 75,
+    height: 75,
     marginBottom: 20,
   },
   largeTitle: {
