@@ -131,55 +131,24 @@ const loginUser = async (req, res) => {
 // -- Profile setup/update --
 const setupProfile = async (req, res) => {
   try {
-    // The protect middleware attaches the logged-in user to req.user
-    const userId = req.user._id || req.user.id; // Handles both cases
+    const { username, ...profileFields } = req.body;
 
-    if (!userId) {
-      return res.status(401).json({ success: false, error: "Unauthorized" });
+    if (!username) {
+      return res.status(400).json({ success: false, error: 'Username is required' });
     }
 
-    // Fields allowed from frontend
-    const {
-      phone,
-      farmLocation,
-      farmSize,
-      experience,
-      farmingType,
-      soilType,
-      irrigationType,
-      lastHarvest,
-      cropsGrown,
-    } = req.body;
-
-    // Only update allowed fields and mark as complete
-    const updateFields = {
-      phone,
-      farmLocation,
-      farmSize,
-      experience,
-      farmingType,
-      soilType,
-      irrigationType,
-      lastHarvest,
-      cropsGrown: Array.isArray(cropsGrown) ? cropsGrown : [],
-      isProfileComplete: true,
-    };
-
-    // Update the user in the database
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { $set: updateFields },
-      { new: true }
-    ).select("-password");
-
-    if (!updatedUser) {
-      return res.status(404).json({ success: false, error: "User not found" });
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
 
-    return res.status(200).json({ success: true, user: updatedUser });
+    Object.assign(user, profileFields);
+    await user.save();
+
+    res.status(200).json({ success: true, user });
   } catch (error) {
-    console.error("Profile setup error:", error);
-    return res.status(500).json({ success: false, error: "Internal server error" });
+    console.error('Setup error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error in setup' });
   }
 };
 
