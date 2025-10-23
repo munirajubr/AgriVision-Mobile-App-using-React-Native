@@ -24,12 +24,14 @@ export default function Login() {
   const { isLoading, login, isCheckingAuth } = useAuthStore();
 
   const handleLogin = async () => {
-    const result = await login(email, password);
+  const result = await login(email, password);
 
-    if (!result.success) Alert.alert("Error", result.error);
-  };
+  if (!result.success) {
+    console.log("Login error:", result.error);
+    Alert.alert("Login Failed", result.error || "Unknown error");
+  }
+};
 
-  if (isCheckingAuth) return null;
 
   return (
     <KeyboardAvoidingView
