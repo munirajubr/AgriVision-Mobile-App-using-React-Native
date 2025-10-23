@@ -20,7 +20,8 @@ app.use(cors()); // Enable CORS
 
 // Route setup
 app.use("/api/auth", authRoutes);
-app.use("/api/devices", deviceRoutes); // Mounting the device API endpoints
+app.use("/api/devices", deviceRoutes);
+ // Mounting the device API endpoints
 
 // Server listen
 app.listen(PORT, () => {
