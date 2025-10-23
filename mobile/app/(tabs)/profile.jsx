@@ -1,19 +1,10 @@
 import React from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  Linking,
-} from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Alert, Linking } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import COLORS from "../../constants/colors";
 import styles from "../../assets/styles/profile.styles";
 import { useAuthStore } from "../../store/authStore";
-import { Image } from "expo-image";
 import LogoutButton from "../../components/LogoutButton";
 import ProfileHeader from "../../components/ProfileHeader";
 
@@ -21,9 +12,17 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
 
+  // Fallback for missing user state
+  if (!user) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.errorText}>User not found.</Text>
+      </View>
+    );
+  }
+
   const handleRateApp = () => Alert.alert("Rate App", "Thank you for your feedback!");
-  const handleContactUs = () =>
-    Linking.openURL("mailto:support@agrivision.com?subject=Support Request");
+  const handleContactUs = () => Linking.openURL("mailto:support@agrivision.com?subject=Support Request");
 
   const menuItems = [
     { icon: "settings-outline", label: "Settings", route: "/(pages)/settings", color: "#2196F3" },
@@ -34,8 +33,6 @@ export default function ProfileScreen() {
     { icon: "mail-outline", label: "Contact Us", action: handleContactUs, color: "#00BCD4" },
   ];
 
-  if (!user) return null;
-
   return (
     <View style={styles.container}>
       <ScrollView
@@ -45,49 +42,47 @@ export default function ProfileScreen() {
       >
         <ProfileHeader onEditProfile={() => router.push("/(pages)/editprofile")} />
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Contact Information</Text>
-          <View style={styles.infoCard}>
-            <InfoItem icon="mail-outline" color="#2196F3" label="Email" value={user.email} />
-            <Divider />
-            <InfoItem icon="call-outline" color="#4CAF50" label="Phone" value={user.phone} />
-            <Divider />
-            <InfoItem icon="location-outline" color="#FF9800" label="Location" value={user.farmLocation} />
-          </View>
-        </View>
+        {/* CONTACT */}
+        <Section title="Contact Information">
+          <InfoItem icon="mail-outline" color="#2196F3" label="Email" value={user.email || "Not set"} />
+          <Divider />
+          <InfoItem icon="call-outline" color="#4CAF50" label="Phone" value={user.phone || "Not set"} />
+          <Divider />
+          <InfoItem icon="location-outline" color="#FF9800" label="Location" value={user.farmLocation || "Not set"} />
+        </Section>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Farm Details</Text>
+        {/* FARM DETAILS */}
+        <Section title="Farm Details">
           <View style={styles.statsGrid}>
-            <Stat icon="resize-outline" label="Farm Size" value={user.farmSize} color={COLORS.primary} />
-            <Stat icon="time-outline" label="Experience" value={user.experience} color="#4CAF50" />
+            <Stat icon="resize-outline" label="Farm Size" value={user.farmSize || "Not set"} color={COLORS.primary} />
+            <Stat icon="time-outline" label="Experience" value={user.experience || "Not set"} color="#4CAF50" />
             <Stat icon="hardware-chip-outline" label="Devices" value={user.connectedDevices ?? 0} color="#2196F3" />
           </View>
           <View style={styles.detailsCard}>
-            <DetailItem label="Farming Type" value={user.farmingType} icon="leaf-outline" iconColor="#4CAF50" />
+            <DetailItem label="Farming Type" value={user.farmingType || "Not set"} icon="leaf-outline" iconColor="#4CAF50" />
             <Divider />
-            <DetailItem label="Soil Type" value={user.soilType} icon="layers-outline" iconColor="#795548" />
+            <DetailItem label="Soil Type" value={user.soilType || "Not set"} icon="layers-outline" iconColor="#795548" />
             <Divider />
-            <DetailItem label="Irrigation" value={user.irrigationType} icon="water-outline" iconColor="#2196F3" />
+            <DetailItem label="Irrigation" value={user.irrigationType || "Not set"} icon="water-outline" iconColor="#2196F3" />
             <Divider />
-            <DetailItem label="Last Harvest" value={user.lastHarvest} icon="calendar-outline" iconColor="#9C27B0" />
+            <DetailItem label="Last Harvest" value={user.lastHarvest || "Not set"} icon="calendar-outline" iconColor="#9C27B0" />
           </View>
-        </View>
+        </Section>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Crops Grown</Text>
+        {/* CROPS */}
+        <Section title="Crops Grown">
           <View style={styles.cropsContainer}>
-            {(user.cropsGrown ?? []).map((crop, index) => (
-              <View key={index} style={styles.cropChip}>
+            {(user.cropsGrown && user.cropsGrown.length ? user.cropsGrown : ["Not set"]).map((crop, idx) => (
+              <View key={idx} style={styles.cropChip}>
                 <Ionicons name="leaf" size={16} color={COLORS.primary} />
                 <Text style={styles.cropText}>{crop}</Text>
               </View>
             ))}
           </View>
-        </View>
+        </Section>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>App Settings</Text>
+        {/* MENU */}
+        <Section title="App Settings">
           <View style={styles.menuContainer}>
             {menuItems.map((item, idx) => (
               <TouchableOpacity
@@ -106,12 +101,14 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             ))}
           </View>
-        </View>
+        </Section>
 
+        {/* VERSION */}
         <View style={styles.versionContainer}>
           <Text style={styles.versionText}>AgriVision v1.0.0</Text>
         </View>
 
+        {/* LOGOUT */}
         <TouchableOpacity style={styles.logoutButton} activeOpacity={0.8}>
           <Ionicons name="log-out-outline" size={22} color="#F44336" />
           <LogoutButton />
@@ -120,6 +117,15 @@ export default function ProfileScreen() {
     </View>
   );
 }
+
+// Subcomponents for neat rendering:
+
+const Section = ({ title, children }) => (
+  <View style={styles.section}>
+    <Text style={styles.sectionTitle}>{title}</Text>
+    {children}
+  </View>
+);
 
 const InfoItem = ({ icon, color, label, value }) => (
   <View style={styles.infoItem}>
