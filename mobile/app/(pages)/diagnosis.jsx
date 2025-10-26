@@ -15,14 +15,14 @@ import { useRouter } from "expo-router";
 import COLORS from "../../constants/colors";
 import styles from "../../assets/styles/diagnosis.styles";
 
-const CROP_HEALTH_KEY = process.env.CROP_HEALTH_API;
-const CROP_HEALTH_URL = "https://crop.kindwise.com/api/v1/identification";
+// Set your deployed Flask base URL in app config (app.json / app.config / .env)
+const BASE_URL = "https://eggplant-disease-detection-ml-model.onrender.com";
 
-const PlantAnalysisScreen = () => {
+export default function PlantAnalysisScreen() {
   const router = useRouter();
 
   const [selectedImage, setSelectedImage] = useState(null);
-  const [selectedImageData, setSelectedImageData] = useState(null);
+  const [selectedImageData, setSelectedImageData] = useState(null); // base64
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
 
@@ -47,7 +47,7 @@ const PlantAnalysisScreen = () => {
       const res = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.8,
+        quality: 0.85,
         base64: true,
       });
       if (!res.canceled && res.assets?.length > 0) {
@@ -64,7 +64,7 @@ const PlantAnalysisScreen = () => {
     try {
       const res = await ImagePicker.launchImageLibraryAsync({
         allowsEditing: true,
-        quality: 0.8,
+        quality: 0.85,
         base64: true,
       });
       if (!res.canceled && res.assets?.length > 0) {
@@ -86,14 +86,17 @@ const PlantAnalysisScreen = () => {
 
   useEffect(() => {
     if (selectedImageData) {
-      submitForAnalysis();
+      submitForAnalysis(); // auto-run after selection
     }
   }, [selectedImageData]);
 
+  // Choose ONE of the two submit approaches below
+
+  // A) JSON base64 -> /predict/base64 (simple with your current code)
   const submitForAnalysis = async () => {
     if (!selectedImageData) return;
-    if (!CROP_HEALTH_KEY) {
-      Alert.alert("Configuration Missing", "Crop.health API KEY is missing.");
+    if (!BASE_URL) {
+      Alert.alert("Configuration Missing", "ML model BASE_URL is not configured.");
       return;
     }
 
@@ -101,56 +104,36 @@ const PlantAnalysisScreen = () => {
     setAnalysisResult(null);
 
     try {
-      const body = {
-        images: [`data:image/jpeg;base64,${selectedImageData}`],
-      };
-
-      const response = await fetch(CROP_HEALTH_URL, {
+      const resp = await fetch(`${BASE_URL}/predict/base64`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Api-Key": CROP_HEALTH_KEY,
-        },
-        body: JSON.stringify(body),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image: `data:image/jpeg;base64,${selectedImageData}`,
+        }),
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("API error:", errorText);
-        throw new Error(`API request failed with status ${response.status}, body: ${errorText}`);
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(`API ${resp.status}: ${text}`);
       }
 
-      const result = await response.json();
-      // console.log("Full API response:", result); 
+      const data = await resp.json();
+      if (!data.success) throw new Error(data.error || "Prediction failed");
 
-      const diseaseSuggestions = result.result?.disease?.suggestions || [];
-      const cropSuggestions = result.result?.crop?.suggestions || [];
-      const isPlant = result.result?.is_plant;
-
-      let diseaseLabel = "";
-      let confidenceLabel = 0;
-
-      if (diseaseSuggestions.length > 0) {
-        const topDisease = diseaseSuggestions[0];
-        diseaseLabel =
-          topDisease.name ||
-          (topDisease.details?.common_names?.[0]) ||
-          "Plant Disease";
-        confidenceLabel = Math.round((topDisease.probability || 0) * 100);
-      } else if (isPlant?.binary === true && cropSuggestions.length > 0) {
-        diseaseLabel = cropSuggestions[0].plant_name || "Identified Plant";
-        confidenceLabel = Math.round((cropSuggestions[0].probability || 0) * 100);
-      } else {
-        diseaseLabel = "Unknown";
-      }
-
-      const healthStatus = diseaseLabel.toLowerCase().includes("healthy") ? "Good" : "Moderate";
+      const label = data.prediction?.class || "Unknown";
+      const confidence = data.prediction?.confidence ?? 0;
+      const confidencePct = Math.round(confidence * 100);
+      const health = String(label).toLowerCase().includes("healthy") ? "Good" : "Moderate";
+      const recommendations = Array.isArray(data.disease_info?.recommendations)
+        ? data.disease_info.recommendations
+        : [];
 
       setAnalysisResult({
-        health: healthStatus,
-        confidence: confidenceLabel,
-        issues: [diseaseLabel],
-        recommendations: [],
+        health,
+        confidence: confidencePct,
+        issues: [label],
+        recommendations,
+        raw: data,
       });
     } catch (err) {
       Alert.alert("Analysis Failed", err.message || String(err));
@@ -159,10 +142,68 @@ const PlantAnalysisScreen = () => {
     }
   };
 
+  /* B) Multipart -> /predict (uncomment to use)
+  const submitForAnalysis = async () => {
+    if (!selectedImage) return;
+    if (!BASE_URL) {
+      Alert.alert("Configuration Missing", "ML model BASE_URL is not configured.");
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setAnalysisResult(null);
+
+    try {
+      const form = new FormData();
+      form.append("file", {
+        uri: selectedImage,
+        name: "leaf.jpg",
+        type: "image/jpeg",
+      });
+
+      const resp = await fetch(`${BASE_URL}/predict`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        body: form,
+      });
+
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(`API ${resp.status}: ${text}`);
+      }
+
+      const data = await resp.json();
+      if (!data.success) throw new Error(data.error || "Prediction failed");
+
+      const label = data.prediction?.class || "Unknown";
+      const confidence = data.prediction?.confidence ?? 0;
+      const confidencePct = Math.round(confidence * 100);
+      const health = String(label).toLowerCase().includes("healthy") ? "Good" : "Moderate";
+      const recommendations = Array.isArray(data.disease_info?.recommendations)
+        ? data.disease_info.recommendations
+        : [];
+
+      setAnalysisResult({
+        health,
+        confidence: confidencePct,
+        issues: [label],
+        recommendations,
+        raw: data,
+      });
+    } catch (err) {
+      Alert.alert("Analysis Failed", err.message || String(err));
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+  */
+
   const navigateToDiagnosis = () => {
     if (!analysisResult) return;
     const params = {
-      diagnosisType: "natural",
+      diagnosisType: "model",
       crop: "",
       part: "",
       health: analysisResult.health,
@@ -184,10 +225,7 @@ const PlantAnalysisScreen = () => {
           <View style={styles.section}>
             {selectedImage ? (
               <View style={styles.imageContainer}>
-                <Image
-                  source={{ uri: selectedImage }}
-                  style={styles.selectedImage}
-                />
+                <Image source={{ uri: selectedImage }} style={styles.selectedImage} />
                 <TouchableOpacity
                   style={styles.changeImageButton}
                   onPress={showImagePicker}
@@ -203,11 +241,7 @@ const PlantAnalysisScreen = () => {
                 onPress={showImagePicker}
                 disabled={isAnalyzing}
               >
-                <Ionicons
-                  name="camera-outline"
-                  size={48}
-                  color={COLORS.primary}
-                />
+                <Ionicons name="camera-outline" size={48} color={COLORS.primary} />
                 <Text style={styles.uploadTitle}>Add Plant Image</Text>
                 <Text style={styles.uploadSubtitle}>
                   Tap to capture or upload from gallery
@@ -215,6 +249,7 @@ const PlantAnalysisScreen = () => {
               </TouchableOpacity>
             )}
           </View>
+
           {/* Analysis Result */}
           {analysisResult && (
             <View style={styles.section}>
@@ -223,48 +258,51 @@ const PlantAnalysisScreen = () => {
                 <View style={styles.resultHeader}>
                   <View style={styles.healthIndicator}>
                     <Ionicons
-                      name={
-                        analysisResult.health === "Good"
-                          ? "checkmark-circle"
-                          : "warning"
-                      }
+                      name={analysisResult.health === "Good" ? "checkmark-circle" : "warning"}
                       size={24}
-                      color={
-                        analysisResult.health === "Good"
-                          ? "#4CAF50"
-                          : "#FF9800"
-                      }
+                      color={analysisResult.health === "Good" ? "#4CAF50" : "#FF9800"}
                     />
-                    <Text style={styles.healthText}>
-                      Health: {analysisResult.health}
-                    </Text>
+                    <Text style={styles.healthText}>Health: {analysisResult.health}</Text>
                   </View>
                 </View>
+
                 <View style={styles.resultSection}>
                   <Text style={styles.resultSectionTitle}>Predicted Disease</Text>
                   {analysisResult.issues.map((item, idx) => (
-                    <Text key={idx} style={styles.issueText}>
-                      • {item}
-                    </Text>
+                    <Text key={idx} style={styles.issueText}>• {item}</Text>
                   ))}
+                  <Text style={styles.confidenceText}>Confidence: {analysisResult.confidence}%</Text>
+
+                  {analysisResult.recommendations?.length > 0 && (
+                    <View style={{ marginTop: 8 }}>
+                      <Text style={styles.resultSectionTitle}>Recommendations</Text>
+                      {analysisResult.recommendations.map((r, i) => (
+                        <Text key={i} style={styles.recommendationText}>• {r}</Text>
+                      ))}
+                    </View>
+                  )}
                 </View>
               </View>
             </View>
           )}
+
           {/* Action Buttons */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={styles.analyzeButton}
               onPress={submitForAnalysis}
-              disabled={isAnalyzing || !selectedImageData}
+              disabled={isAnalyzing || (!selectedImageData /* for base64 */ && !selectedImage /* for multipart */)}
             >
               {isAnalyzing ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
                 <Ionicons name="search-outline" size={20} color="#fff" />
               )}
-              <Text style={styles.analyzeButtonText}>Analyse</Text>
+              <Text style={styles.analyzeButtonText}>
+                {isAnalyzing ? "Analyzing..." : "Analyse"}
+              </Text>
             </TouchableOpacity>
+
             {analysisResult && (
               <TouchableOpacity
                 style={styles.diagnosisButton}
@@ -280,6 +318,4 @@ const PlantAnalysisScreen = () => {
       </ScrollView>
     </SafeAreaView>
   );
-};
-
-export default PlantAnalysisScreen;
+}
