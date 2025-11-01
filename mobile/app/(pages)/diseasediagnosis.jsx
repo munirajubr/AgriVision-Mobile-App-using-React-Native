@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useMemo, useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import COLORS from '../../constants/colors';
@@ -10,37 +10,55 @@ const DiagnosisPage = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
 
-  console.log("Route params:", params);
+  // Parse inputs defensively
+  const diagnosisType = params?.diagnosisType ? String(params.diagnosisType) : '';
+  const isDiseaseDiagnosis = ['disease', 'model', 'natural'].includes(diagnosisType);
 
-  const diagnosisType = params.diagnosisType;
-  const isDiseaseDiagnosis = diagnosisType === 'disease';
-  const decodedIssues = JSON.parse(params.issues || '[]');
-  const diseaseInput = params.diseaseInput ? JSON.parse(params.diseaseInput) : null;
+  const decodedIssues = useMemo(() => {
+    try {
+      return params?.issues ? JSON.parse(String(params.issues)) : [];
+    } catch {
+      return [];
+    }
+  }, [params?.issues]);
 
-  const diseaseName = diseaseInput?.diseaseName || (decodedIssues.length > 0 ? decodedIssues[0] : null);
+  const diseaseInput = useMemo(() => {
+    try {
+      return params?.diseaseInput ? JSON.parse(String(params.diseaseInput)) : null;
+    } catch {
+      return null;
+    }
+  }, [params?.diseaseInput]);
 
+  const diseaseName =
+    diseaseInput?.diseaseName || (decodedIssues.length > 0 ? decodedIssues[0] : null);
+
+  // State for disease info fetch
   const [diseaseInfo, setDiseaseInfo] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [loadingInfo, setLoadingInfo] = useState(false);
+  const [errorInfo, setErrorInfo] = useState(null);
 
   const getDisplayText = (value) => {
-    if (value === null || value === undefined || value === '') {
-      return 'Details not available';
-    }
+    if (value === null || value === undefined || value === '') return 'Details not available';
     return String(value);
   };
 
+  // Fetch disease details from Flask API
   useEffect(() => {
     const fetchDiseaseInfo = async () => {
-      if (!diseaseName) {
-        setError('No disease name found in input or issues.');
+      if (!isDiseaseDiagnosis) {
         setDiseaseInfo(null);
-        setLoading(false);
+        setErrorInfo('Not a disease diagnosis flow.');
+        return;
+      }
+      if (!diseaseName) {
+        setDiseaseInfo(null);
+        setErrorInfo('No disease name found in input or issues.');
         return;
       }
 
-      setLoading(true);
-      setError(null);
+      setLoadingInfo(true);
+      setErrorInfo(null);
       setDiseaseInfo(null);
 
       try {
@@ -50,27 +68,24 @@ const DiagnosisPage = () => {
           body: JSON.stringify({ disease_name: diseaseName }),
         });
 
-        const data = await res.json();
-        console.log("API response data:", data);
+        const data = await res.json().catch(() => ({}));
 
-        if (res.ok && data.info && Object.keys(data.info).length > 0) {
+        if (res.ok && data?.info && Object.keys(data.info).length > 0) {
           setDiseaseInfo(data.info);
-        } else if (data.error) {
-          setError(data.error);
+        } else if (data?.error) {
+          setErrorInfo(data.error);
         } else {
-          setError('No detailed info available.');
+          setErrorInfo('No detailed info available.');
         }
       } catch {
-        setError('Failed to fetch disease information.');
+        setErrorInfo('Failed to fetch disease information.');
       } finally {
-        setLoading(false);
+        setLoadingInfo(false);
       }
     };
 
-    if (isDiseaseDiagnosis || diagnosisType === 'natural') {
-      fetchDiseaseInfo();
-    }
-  }, [diseaseName, isDiseaseDiagnosis, diagnosisType]);
+    fetchDiseaseInfo();
+  }, [isDiseaseDiagnosis, diseaseName]);
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -89,7 +104,7 @@ const DiagnosisPage = () => {
           decodedIssues.map((issue, idx) => (
             <View key={idx} style={styles.issueCard}>
               <Ionicons name="alert-circle" size={20} color="#F44336" />
-              <Text style={styles.issueText}>{issue}</Text>
+              <Text style={styles.issueText}>{String(issue)}</Text>
             </View>
           ))
         ) : (
@@ -97,58 +112,64 @@ const DiagnosisPage = () => {
         )}
       </View>
 
-      {/* Days to Recovery and Impact on Yield - top summary */}
-      {diseaseInfo && !loading && !error && (
-        <View style={[styles.section, { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 10 }]}>
-          <View style={{ alignItems: 'center' }}>
-            <Text style={styles.twoColumnLabel}>
-              {getDisplayText(diseaseInfo['Days to Recovery'])}
-            </Text>
-            <Text style={styles.twoColumnValue}>Days to Recovery</Text>
-          </View>
-          <View style={{ alignItems: 'center' }}>
-            <Text style={styles.twoColumnLabel}>
-              {getDisplayText(diseaseInfo['Impact on Yield'])}
-            </Text>
-            <Text style={styles.twoColumnValue}>Impact</Text>
-          </View>
+      {/* Loading and Error for disease info */}
+      {loadingInfo && (
+        <View style={{ padding: 16, alignItems: 'center' }}>
+          <ActivityIndicator size="small" color={COLORS.primary} />
+          <Text style={{ marginTop: 8 }}>Loading disease details...</Text>
         </View>
       )}
 
-      {/* Loading and Error */}
-      {loading && (
-        <View style={{ padding: 20 }}>
-          <Text style={{ textAlign: 'center' }}>Loading disease details...</Text>
-        </View>
-      )}
-      {!loading && error && (
-        <Text style={{ color: 'red', textAlign: 'center', padding: 10 }}>{error}</Text>
+      {!loadingInfo && errorInfo && (
+        <Text style={{ color: 'red', textAlign: 'center', padding: 10 }}>{errorInfo}</Text>
       )}
 
-      {/* Disease Info */}
-      {!loading && !error && (
-        diseaseInfo && Object.keys(diseaseInfo).length > 0 ? (
-          <>
+      {/* Disease summary and details */}
+      {!loadingInfo && !errorInfo && diseaseInfo && (
+        <>
+          {/* Top summary */}
+          <View
+            style={[
+              styles.section,
+              { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 10 },
+            ]}
+          >
+            <View style={{ alignItems: 'center' }}>
+              <Text style={styles.twoColumnLabel}>
+                {getDisplayText(diseaseInfo['Days to Recovery'])}
+              </Text>
+              <Text style={styles.twoColumnValue}>Days to Recovery</Text>
+            </View>
+            {/* <View style={{ alignItems: 'center' }}>
+              <Text style={styles.twoColumnLabel}>
+                {getDisplayText(diseaseInfo['Impact on Yield'])}
+              </Text>
+              <Text style={styles.twoColumnValue}>Impact</Text>
+            </View> */}
+            <View style={{ alignItems: 'center' }}>
+              <Text style={styles.twoColumnLabel}>
+                {getDisplayText(diseaseInfo['Severity Level'])}
+              </Text>
+              <Text style={styles.twoColumnValue}>Severity Level</Text>
+            </View>
+          </View>
 
-            {[  
-              { label: 'Symptoms Description', key: 'Symptoms Description' },
-              { label: 'Natural Resolution', key: 'Natural Resolution' },
-              { label: 'Chemical Resolution', key: 'Chemical Resolution' },
-              { label: 'Severity Level', key: 'Severity Level' },
-            ].map(({ label, key }) => (
-              <View key={key} style={styles.detailCard}>
-                <Text style={styles.detailCardTitle}>{label}</Text>
-                <Text style={styles.detailCardDescription}>
-                  {getDisplayText(diseaseInfo[key])}
-                </Text>
-              </View>
-            ))}
-          </>
-        ) : (
-          <Text style={[styles.emptyText, { padding: 20, textAlign: 'center' }]}>
-            No detailed disease information available.
-          </Text>
-        )
+          {/* Detailed cards */}
+          {[
+            { label: 'Symptoms Description', key: 'Symptoms Description' },
+            { label: 'Natural Resolution', key: 'Natural Resolution' },
+            { label: 'Chemical Resolution', key: 'Chemical Resolution' },
+            // { label: 'Severity Level', key: 'Severity Level' },
+            { label: 'Impact on Yield', key: 'Impact on Yield' },
+          ].map(({ label, key }) => (
+            <View key={key} style={styles.detailCard}>
+              <Text style={styles.detailCardTitle}>{label}</Text>
+              <Text style={styles.detailCardDescription}>
+                {getDisplayText(diseaseInfo[key])}
+              </Text>
+            </View>
+          ))}
+        </>
       )}
 
       {/* Done Button */}

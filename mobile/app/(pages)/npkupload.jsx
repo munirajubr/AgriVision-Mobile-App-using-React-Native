@@ -124,7 +124,7 @@ const NPKUploadPage = () => {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.content}>
         {/* PDF Upload Section */}
-        <View style={styles.section}>
+        {/* <View style={styles.section}>
           {selectedFile ? (
             <View style={styles.fileCard}>
               <View style={styles.fileInfo}>
@@ -179,13 +179,13 @@ const NPKUploadPage = () => {
               <Text style={styles.processingText}>Processing PDF...</Text>
             </View>
           )}
-        </View>
+        </View> */}
         {/* Separator with "or" text */}
-        <View style={styles.separatorRow}>
+        {/* <View style={styles.separatorRow}>
           <View style={styles.separatorLine} />
           <Text style={styles.separatorOr}>or</Text>
           <View style={styles.separatorLine} />
-        </View>
+        </View> */}
 
         {/* NPK & Environmental Inputs */}
         <View style={styles.section}>
