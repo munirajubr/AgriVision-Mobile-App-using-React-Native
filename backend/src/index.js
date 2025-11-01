@@ -18,7 +18,6 @@ job.start();
 app.use(express.json()); // Body parser for JSON data
 app.use(cors()); // Enable CORS
 
-
 // Route setup
 app.use("/api/auth", authRoutes);
 app.use("/api/devices", deviceRoutes);

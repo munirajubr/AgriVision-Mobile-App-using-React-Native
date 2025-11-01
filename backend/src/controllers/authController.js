@@ -2,36 +2,36 @@ import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-// Helper to generate JWT
+// Generate JWT token with expiry
 const generateToken = (userId) =>
   jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '15d' });
 
-// Register new user
+// -- Register new user --
 const registerUser = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
     if (!username || !email || !password) {
-      return res.status(400).json({ success: false, error: "All fields are required." });
-    }
-    if (username.length < 3) {
-      return res.status(400).json({ success: false, error: "Username must be at least 3 characters." });
-    }
-    if (password.length < 6) {
-      return res.status(400).json({ success: false, error: "Password must be at least 6 characters." });
+      return res.status(400).json({ success: false, error: 'All fields are required' });
     }
 
-    const existingEmail = await User.findOne({ email });
-    if (existingEmail) {
-      return res.status(409).json({ success: false, error: "Email already exists." });
+    if (username.length < 3) {
+      return res.status(400).json({ success: false, error: 'Username must be at least 3 characters' });
     }
-    const existingUsername = await User.findOne({ username });
-    if (existingUsername) {
-      return res.status(409).json({ success: false, error: "Username already exists." });
+
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, error: 'Password must be at least 6 characters' });
+    }
+
+    // Check duplicates
+    if (await User.findOne({ email })) {
+      return res.status(409).json({ success: false, error: 'Email already exists' });
+    }
+    if (await User.findOne({ username })) {
+      return res.status(409).json({ success: false, error: 'Username already exists' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const profileImage = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
 
     const user = new User({
@@ -39,14 +39,10 @@ const registerUser = async (req, res) => {
       email,
       password: hashedPassword,
       profileImage,
-      isProfileComplete: false,
     });
 
     await user.save();
-
     const token = generateToken(user._id);
-
-    console.log("User registered:", email);
 
     res.status(201).json({
       success: true,
@@ -56,68 +52,108 @@ const registerUser = async (req, res) => {
         username: user.username,
         email: user.email,
         profileImage: user.profileImage,
-        isProfileComplete: user.isProfileComplete,
         createdAt: user.createdAt,
       },
     });
-  } catch (err) {
-    console.error("Register error:", err);
-    res.status(500).json({ success: false, error: "Internal server error." });
+  } catch (error) {
+    console.error('Register error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 };
 
-
-// Login existing user
+// -- Login existing user --
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ success: false, error: "Email and password are required." });
+      return res.status(400).json({ success: false, error: 'All fields are required' });
     }
 
-    const user = await User.findOne({ email }).select("+password");
+    const user = await User.findOne({ email }).select('+password');
     if (!user) {
-      return res.status(401).json({ success: false, error: "Invalid email or password." });
+      return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ success: false, error: "Invalid email or password." });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
     const token = generateToken(user._id);
 
-    const userResponse = {
-      id: user._id,
-      username: user.username,
-      email: user.email,
-      phone: user.phone,
-      farmLocation: user.farmLocation,
-      farmSize: user.farmSize,
-      experience: user.experience,
-      connectedDevices: user.connectedDevices,
-      farmingType: user.farmingType,
-      soilType: user.soilType,
-      irrigationType: user.irrigationType,
-      lastHarvest: user.lastHarvest,
-      cropsGrown: user.cropsGrown,
-      profileImage: user.profileImage,
-      isProfileComplete: user.isProfileComplete,
-      createdAt: user.createdAt,
-    };
-
-    console.log("User logged in:", email);
+    // Build user profile for response, excluding sensitive info
+    const {
+      _id,
+      username,
+      email: userEmail,
+      phone,
+      farmLocation,
+      farmSize,
+      experience,
+      connectedDevices,
+      farmingType,
+      soilType,
+      irrigationType,
+      lastHarvest,
+      cropsGrown,
+      profileImage,
+      createdAt,
+    } = user;
 
     res.status(200).json({
       success: true,
       token,
-      user: userResponse,
+      user: {
+        id: _id,
+        username,
+        email: userEmail,
+        phone,
+        farmLocation,
+        farmSize,
+        experience,
+        connectedDevices,
+        farmingType,
+        soilType,
+        irrigationType,
+        lastHarvest,
+        cropsGrown,
+        profileImage,
+        createdAt,
+      },
     });
-  } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ success: false, error: "Internal server error." });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 };
 
-export { registerUser, loginUser };
+// -- Profile setup/update --
+const setupProfile = async (req, res) => {
+  try {
+    const { username, ...profileFields } = req.body;
+
+    if (!username) {
+      return res.status(400).json({ success: false, error: 'Username is required' });
+    }
+
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    Object.assign(user, profileFields);
+    await user.save();
+
+    res.status(200).json({ success: true, user });
+  } catch (error) {
+    console.error('Setup error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error in setup' });
+  }
+};
+
+export {
+  registerUser,
+  loginUser,
+  setupProfile,
+};
