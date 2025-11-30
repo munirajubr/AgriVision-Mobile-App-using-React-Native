@@ -23,10 +23,6 @@ const DeviceForm = ({ onAddDevice }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Add New Device</Text>
-      <Text style={styles.subtitle}>
-        Connect a new smart farm sensor using its unique ID
-      </Text>
       
       <View style={styles.inputContainer}>
         <TextInput
@@ -59,28 +55,16 @@ const styles = StyleSheet.create({
     padding: 20,
     marginHorizontal: 16,
     marginVertical: 12,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: COLORS.border,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginBottom: 20,
-    lineHeight: 20,
+    // shadowColor: '#000',
+    // shadowOffset: {
+    //   width: 0,
+    //   height: 0,
+    // },
+    // shadowOpacity: 0.08,
+    // shadowRadius: 4,
+    // elevation: 3,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -92,7 +76,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    fontSize: 15,
+    fontSize: 12,
     color: COLORS.textPrimary,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -109,7 +93,7 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '600',
     marginLeft: 6,
   },
