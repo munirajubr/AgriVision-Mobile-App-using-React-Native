@@ -25,6 +25,6 @@ app.use("/api/devices", deviceRoutes);
 
 // Server listen
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port http://localhost:${PORT}`);
   connectDB(); // Establish database connection
 });

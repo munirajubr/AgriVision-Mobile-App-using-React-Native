@@ -1,200 +1,119 @@
-import Device from '../models/Device.js'; // Use the latest Device model from the canvas
+import axios from "axios";
+import User from "../models/User.js";
 
-/**
- * @desc Get all devices belonging to the authenticated user
- * @route GET /api/devices
- * @access Private
- */
-const getDevices = async (req, res) => {
-    try {
-        const devices = await Device.find({ owner: req.user.id }).sort({ createdAt: -1 });
-        res.status(200).json(devices);
-    } catch (error) {
-        res.status(500).json({ message: 'Error retrieving devices', error: error.message });
+// GET /api/devices/get
+export const getDevices = async (req, res) => {
+  try {
+    const { username } = req.body;
+
+    if (!username) {
+      return res.status(400).json({ message: "username is required" });
     }
+
+    const user = await User.findOne({ username }).select("devices");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      message: "Devices fetched",
+      devices: user.devices
+    });
+
+  } catch (err) {
+    console.error("GET DEVICES ERROR:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
 };
 
-/**
- * @desc Register a new device
- * @route POST /api/devices
- * @access Private
- */
-const createDevice = async (req, res) => {
-    const { deviceId, name, type, bluetoothAddress, location } = req.body;
 
-    if (!deviceId || !name || !type) {
-        return res.status(400).json({ message: 'Please include deviceId, name, and type' });
+
+// POST /api/devices/add
+export const addDevice = async (req, res) => {
+  try {
+    const { username, deviceId } = req.body;
+    if (!username || !deviceId) {
+      return res.status(400).json({ message: "username and deviceId are required" });
     }
 
+    // Call the lightweight Flask endpoint that only checks DB collection existence
+    let verifyRes;
     try {
-        const newDevice = new Device({
-            deviceId,
-            name,
-            type,
-            bluetoothAddress,
-            location,
-            owner: req.user.id,
+      verifyRes = await axios.post(
+        // "http://127.0.0.1:10000/api/iot_device_exists",
+        "https://ml-flask-model.onrender.com/api/iot_device_exists",
+        { device_id: deviceId }
+        // no timeout option here => axios will wait until response
+      );
+    } catch (err) {
+      // If Flask responded with non-2xx, axios throws with err.response populated
+      if (err.response) {
+        if (err.response.status === 404) {
+          return res.status(404).json({ message: "Device ID not found in IoT database" });
+        }
+        // other HTTP error from Flask
+        return res.status(502).json({
+          message: "IoT server returned an error during verification",
+          flask: err.response.data
         });
+      }
 
-        const savedDevice = await newDevice.save();
-        res.status(201).json(savedDevice);
-    } catch (error) {
-        if (error.code === 11000) {
-            return res.status(400).json({ message: `Device with ID: ${deviceId} or Bluetooth Address already exists.` });
-        }
-        res.status(500).json({ message: 'Error creating device', error: error.message });
-    }
-};
-
-/**
- * @desc Get a single device by its ID
- * @route GET /api/devices/:id
- * @access Private (Owner only)
- */
-const getDevice = async (req, res) => {
-    try {
-        const device = await Device.findOne({ _id: req.params.id, owner: req.user.id });
-
-        if (!device) {
-            return res.status(404).json({ message: 'Device not found or not owned by user.' });
-        }
-
-        res.status(200).json(device);
-    } catch (error) {
-        res.status(500).json({ message: 'Error retrieving device', error: error.message });
-    }
-};
-
-/**
- * @desc Update device details
- * @route PUT /api/devices/:id
- * @access Private (Owner only)
- */
-const updateDevice = async (req, res) => {
-    try {
-        const device = await Device.findOneAndUpdate(
-            { _id: req.params.id, owner: req.user.id },
-            req.body,
-            { new: true, runValidators: true }
-        );
-
-        if (!device) {
-            return res.status(404).json({ message: 'Device not found or not owned by user.' });
-        }
-
-        res.status(200).json(device);
-    } catch (error) {
-        res.status(500).json({ message: 'Error updating device', error: error.message });
-    }
-};
-
-/**
- * @desc Delete a device
- * @route DELETE /api/devices/:id
- * @access Private (Owner only)
- */
-const deleteDevice = async (req, res) => {
-    try {
-        const device = await Device.findOneAndDelete({ _id: req.params.id, owner: req.user.id });
-
-        if (!device) {
-            return res.status(404).json({ message: 'Device not found or not owned by user.' });
-        }
-
-        res.status(200).json({ message: 'Device removed successfully.' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error deleting device', error: error.message });
-    }
-};
-
-// --- NEW IoT-SPECIFIC CONTROLLERS ---
-
-/**
- * @desc Save Wi-Fi configuration (SSID/Password) to the database for the device to fetch.
- * This is called by the mobile app during the provisioning process.
- * @route POST /api/devices/:id/wifi
- * @access Private (Owner only)
- */
-const setWifiConfig = async (req, res) => {
-    const { ssid, password } = req.body;
-
-    if (!ssid || !password) {
-        return res.status(400).json({ message: 'Wi-Fi SSID and password are required.' });
+      // Network / DNS / other error (no response)
+      console.error("Flask verification network error:", err.message || err);
+      return res.status(503).json({
+        message: "Unable to reach IoT server for verification",
+        error: err.message || String(err)
+      });
     }
 
-    try {
-        const device = await Device.findOneAndUpdate(
-            { _id: req.params.id, owner: req.user.id },
-            { 
-                $set: { 
-                    'wifiConfig.ssid': ssid,
-                    'wifiConfig.password': password,
-                    'wifiConfig.configuredAt': new Date()
-                }
-            },
-            { new: true, runValidators: true }
-        );
-
-        if (!device) {
-            return res.status(404).json({ message: 'Device not found or not owned by user.' });
-        }
-
-        res.status(200).json({ 
-            message: 'Wi-Fi configuration saved successfully. Device can now connect.', 
-            wifiConfig: { ssid: device.wifiConfig.ssid } // Avoid sending the password back
-        });
-
-    } catch (error) {
-        res.status(500).json({ message: 'Error setting Wi-Fi configuration', error: error.message });
-    }
-};
-
-/**
- * @desc Endpoint for the physical IoT device to send its sensor data and update status.
- * This route bypasses standard user authentication and uses a secret key or device-specific token.
- * NOTE: For production, this MUST use a secure device token (e.g., API Key).
- * @route POST /api/devices/data
- * @access Public (Device API Key required in header/body)
- */
-const receiveSensorData = async (req, res) => {
-    // Ideally, check for a secret device-specific API key in the header or body
-    const deviceApiKey = req.header('X-Device-API-Key') || req.body.deviceApiKey;
-    const { deviceId, temperature, humidity, status } = req.body;
-
-    if (!deviceId || typeof temperature === 'undefined' || typeof humidity === 'undefined') {
-        return res.status(400).json({ message: 'Missing deviceId, temperature, or humidity data.' });
+    // If we get here, verifyRes is a 2xx response from Flask.
+    // Treat existence check: expect verifyRes.data.exists === true
+    if (!verifyRes || !verifyRes.data || verifyRes.data.exists !== true) {
+      // safety check: treat as not found
+      return res.status(404).json({ message: "Device ID not found in IoT database" });
     }
 
-    // You would validate the deviceApiKey here before proceeding...
+    // Verified → add to user
+    const user = await User.findOne({ username });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    try {
-        const device = await Device.findOne({ deviceId });
-
-        if (!device) {
-            return res.status(404).json({ message: 'Device not registered.' });
-        }
-
-        // Update readings and status
-        device.lastReadings.temperature = temperature;
-        device.lastReadings.humidity = humidity;
-        device.status = status || 'Active'; // Assume active if data is received
-        device.lastUpdated = new Date();
-
-        await device.save();
-
-        res.status(200).json({ message: 'Sensor data received and device updated.', deviceId: device.deviceId });
-    } catch (error) {
-        res.status(500).json({ message: 'Error processing sensor data', error: error.message });
+    if (!user.devices.includes(deviceId)) {
+      user.devices.push(deviceId);
+      await user.save();
     }
+
+    return res.status(200).json({
+      message: "Device added (verified)",
+      devices: user.devices
+    });
+  } catch (err) {
+    console.error("ADD DEVICE ERROR:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
 };
 
 
-export {
-    getDevices,
-    createDevice,
-    getDevice,
-    updateDevice,
-    deleteDevice,
-    setWifiConfig,
-    receiveSensorData // Export the new function
+
+// DELETE /api/devices/remove
+export const removeDevice = async (req, res) => {
+  try {
+    const { username, deviceId } = req.body;
+    if (!username || !deviceId) {
+      return res.status(400).json({ message: "username and deviceId are required" });
+    }
+
+    const user = await User.findOne({ username });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.devices = user.devices.filter(d => d !== deviceId);
+    await user.save();
+
+    return res.status(200).json({
+      message: "Device removed",
+      devices: user.devices
+    });
+  } catch (err) {
+    console.error("REMOVE DEVICE ERROR:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
 };
