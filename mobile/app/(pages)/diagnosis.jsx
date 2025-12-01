@@ -15,7 +15,7 @@ import { useRouter } from "expo-router";
 import COLORS from "../../constants/colors";
 import styles from "../../assets/styles/diagnosis.styles";
 
-const BASE_URL = "https://eggplant-disease-detection-model.onrender.com";
+const BASE_URL = "https://eggplant-disease-detection-model.onrender.com"; 
 
 export default function PlantAnalysisScreen() {
   const router = useRouter();

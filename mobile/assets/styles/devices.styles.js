@@ -46,6 +46,64 @@ const styles = StyleSheet.create({
     color: COLORS.placeholderText,
     textAlign: 'center',
   },
+  container: {
+    flex: 1,
+  },
+  contentContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+  },
+  section: {
+    width: '100%',
+    maxWidth: 960,
+    alignSelf: 'center',
+  },
+  sectionTitleSmall: {
+    color: '#666',
+    marginBottom: 12,
+    fontSize: 13,
+  },
+
+  emptyContainer: {
+    marginTop: 24,
+    padding: 20,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  emptyText: {
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 6,
+  },
+  emptySubtext: {
+    color: '#777',
+    fontSize: 13,
+  },
+
+  // small helpers used across screens
+  centerContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 8,
+    color: '#444',
+  },
+
+  /* History list item (keeps consistent look) */
+  historyItem: {
+    marginBottom: 12,
+    padding: 12,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
 });
 
 
