@@ -21,18 +21,18 @@ const NPKUploadPage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [extractedData, setExtractedData] = useState(null);
 
-  // Form data states: only N, P, K, temperature, humidity, pH, rainfall
+  // Form data states: only N, P, K, temperature, humidity, ph, rainfall
   const [formData, setFormData] = useState({
     N: "",
     P: "",
     K: "",
     temperature: "",
     humidity: "",
-    pH: "",
+    ph: "",
     rainfall: "",
   });
 
-  // Pick PDF document
+  // Pick PDF document (kept but can be disabled on platforms without file access)
   const pickDocument = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -40,9 +40,10 @@ const NPKUploadPage = () => {
         copyToCacheDirectory: true,
       });
 
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        setSelectedFile(result.assets[0]);
-        processPDF(result.assets[0]);
+      // Expo DocumentPicker v11+ returns { type, uri, name, size } when success
+      if (result.type === "success") {
+        setSelectedFile(result);
+        processPDF(result);
       }
     } catch (error) {
       Alert.alert("Error", "Failed to pick document");
@@ -55,15 +56,15 @@ const NPKUploadPage = () => {
     setIsProcessing(true);
     try {
       // Simulate processing
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      // Mock data
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      // Mock data (replace with real extraction call if you have backend OCR)
       const mockData = {
         N: "120",
         P: "34",
         K: "100",
         temperature: "28.4",
         humidity: "53",
-        pH: "6.9",
+        ph: "6.9",
         rainfall: "245",
       };
       setExtractedData(mockData);
@@ -84,18 +85,28 @@ const NPKUploadPage = () => {
 
   // Update form field
   const updateField = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    // sanitize numeric input: allow only digits, dot and minus
+    const cleaned = value.replace(/[^\d.-]/g, "");
+    setFormData((prev) => ({ ...prev, [field]: cleaned }));
+  };
+
+  // Validate numeric presence for required keys
+  const hasRequiredValues = () => {
+    const keys = ["N", "P", "K", "temperature", "humidity", "ph", "rainfall"];
+    return keys.every((k) => formData[k] !== "" && formData[k] !== null && formData[k] !== undefined);
   };
 
   // Get crop suggestions
   const getCropSuggestions = () => {
-    if (!formData.N || !formData.P || !formData.K) {
+    if (!hasRequiredValues()) {
       Alert.alert(
         "Missing Data",
-        "Please enter NPK values or upload a soil report."
+        "Please fill all fields: N, P, K, temperature, humidity, ph, rainfall."
       );
       return;
     }
+
+    // push params as strings — expo-router serializes into query
     router.push({
       pathname: "/(pages)/npkanalysis",
       params: {
@@ -115,7 +126,7 @@ const NPKUploadPage = () => {
       K: "",
       temperature: "",
       humidity: "",
-      pH: "",
+      ph: "",
       rainfall: "",
     });
   };
@@ -123,73 +134,58 @@ const NPKUploadPage = () => {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.content}>
-        {/* PDF Upload Section */}
-        {/* <View style={styles.section}>
-          {selectedFile ? (
-            <View style={styles.fileCard}>
-              <View style={styles.fileInfo}>
-                <View style={styles.fileIcon}>
-                  <Ionicons name="document-text" size={32} color="#F44336" />
-                </View>
-                <View style={styles.fileDetails}>
-                  <Text style={styles.fileName} numberOfLines={1}>
-                    {selectedFile.name}
-                  </Text>
-                  <Text style={styles.fileSize}>
-                    {(selectedFile.size / 1024).toFixed(2)} KB
-                  </Text>
-                  {extractedData && (
-                    <View style={styles.successBadge}>
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={16}
-                        color="#4CAF50"
-                      />
-                      <Text style={styles.successText}>Data Extracted</Text>
-                    </View>
-                  )}
-                </View>
+
+        {/* File upload — if you want to enable on mobile, remove disabled prop
+        <TouchableOpacity
+          style={[styles.uploadButton]}
+          onPress={pickDocument}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name="cloud-upload-outline"
+            size={48}
+            color={COLORS.primary}
+          />
+          <Text style={styles.uploadTitle}>Upload Soil Report (optional)</Text>
+          <Text style={styles.uploadSubtitle}>Tap to select PDF file</Text>
+        </TouchableOpacity> */}
+
+        {/* {selectedFile && (
+          <View style={styles.fileCard}>
+            <View style={styles.fileInfo}>
+              <Ionicons name="document-text" size={32} color="#F44336" />
+              <View style={{ marginLeft: 12, flex: 1 }}>
+                <Text style={styles.fileName} numberOfLines={1}>
+                  {selectedFile.name || selectedFile.uri}
+                </Text>
+                <Text style={styles.fileSize}>
+                  {selectedFile.size ? `${(selectedFile.size / 1024).toFixed(2)} KB` : ""}
+                </Text>
+                {extractedData && (
+                  <View style={styles.successBadge}>
+                    <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+                    <Text style={styles.successText}>Data Extracted</Text>
+                  </View>
+                )}
               </View>
-              <TouchableOpacity
-                onPress={removeFile}
-                style={styles.removeButton}
-              >
-                <Ionicons name="close-circle" size={24} color="#F44336" />
-              </TouchableOpacity>
             </View>
-          ) : (
-            <TouchableOpacity
-              style={[styles.uploadButton, { opacity: 0.5 }]} 
-              onPress={pickDocument}
-              disabled={true} 
-              
-            >
-              <Ionicons
-                name="cloud-upload-outline"
-                size={48}
-                color={COLORS.primary}
-              />
-              <Text style={styles.uploadTitle}>Upload Soil Report</Text>
-              <Text style={styles.uploadSubtitle}>Tap to select PDF file</Text>
+            <TouchableOpacity onPress={removeFile} style={styles.removeButton}>
+              <Ionicons name="close-circle" size={24} color="#F44336" />
             </TouchableOpacity>
-          )}
-          {isProcessing && (
-            <View style={styles.processingContainer}>
-              <ActivityIndicator size="small" color={COLORS.primary} />
-              <Text style={styles.processingText}>Processing PDF...</Text>
-            </View>
-          )}
-        </View> */}
-        {/* Separator with "or" text */}
-        {/* <View style={styles.separatorRow}>
-          <View style={styles.separatorLine} />
-          <Text style={styles.separatorOr}>or</Text>
-          <View style={styles.separatorLine} />
-        </View> */}
+          </View>
+        )}
+
+        {isProcessing && (
+          <View style={styles.processingContainer}>
+            <ActivityIndicator size="small" color={COLORS.primary} />
+            <Text style={styles.processingText}>Processing PDF...</Text>
+          </View>
+        )} */}
 
         {/* NPK & Environmental Inputs */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Soil & Climate Data</Text>
+
           <View style={styles.inputRow}>
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Nitrogen (N)</Text>
@@ -214,6 +210,7 @@ const NPKUploadPage = () => {
               />
             </View>
           </View>
+
           <View style={styles.inputRow}>
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Potassium (K)</Text>
@@ -230,14 +227,15 @@ const NPKUploadPage = () => {
               <Text style={styles.inputLabel}>pH Level</Text>
               <TextInput
                 style={styles.input}
-                value={formData.pH}
-                onChangeText={(value) => updateField("pH", value)}
+                value={formData.ph}
+                onChangeText={(value) => updateField("ph", value)}
                 placeholder="0.0"
                 keyboardType="decimal-pad"
                 placeholderTextColor={COLORS.placeholderText}
               />
             </View>
           </View>
+
           <View style={styles.inputRow}>
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Temperature (°C)</Text>
@@ -262,6 +260,7 @@ const NPKUploadPage = () => {
               />
             </View>
           </View>
+
           <View style={styles.inputRow}>
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Rainfall (mm)</Text>
@@ -276,6 +275,7 @@ const NPKUploadPage = () => {
             </View>
           </View>
         </View>
+
         {/* Get Suggestions Button */}
         <TouchableOpacity
           style={styles.suggestButton}

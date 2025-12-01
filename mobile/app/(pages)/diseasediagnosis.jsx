@@ -131,7 +131,7 @@ const DiagnosisPage = () => {
           <View
             style={[
               styles.section,
-              { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 10 },
+              { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 5 },
             ]}
           >
             <View style={{ alignItems: 'center' }}>
@@ -157,10 +157,10 @@ const DiagnosisPage = () => {
           {/* Detailed cards */}
           {[
             { label: 'Symptoms Description', key: 'Symptoms Description' },
+            { label: 'Impact on Yield', key: 'Impact on Yield' },
             { label: 'Natural Resolution', key: 'Natural Resolution' },
             { label: 'Chemical Resolution', key: 'Chemical Resolution' },
-            // { label: 'Severity Level', key: 'Severity Level' },
-            { label: 'Impact on Yield', key: 'Impact on Yield' },
+            { label: 'Cultural Resolution', key: 'Cultural control ' },
           ].map(({ label, key }) => (
             <View key={key} style={styles.detailCard}>
               <Text style={styles.detailCardTitle}>{label}</Text>

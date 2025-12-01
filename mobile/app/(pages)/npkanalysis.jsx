@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  StyleSheet,
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,6 +14,27 @@ import styles from "../../assets/styles/npkanalysis.styles";
 
 const PREDICT_API_URL = `${FLASK_API_URL}/api/predict`;
 const CROP_API_URL = `${FLASK_API_URL}/api/crop`;
+const rupee = "\u20B9";
+
+
+function normalizePredictionResponse(respJson) {
+  if (!respJson) return [];
+  if (respJson.prediction && typeof respJson.prediction === "string") {
+    return [{ name: respJson.prediction, confidence: null }];
+  }
+  if (Array.isArray(respJson.predictions)) {
+    return respJson.predictions.map((it) => ({
+      name:
+        it.label ||
+        it.name ||
+        it.class ||
+        it.prediction ||
+        String(it),
+      confidence: it.confidence ?? it.score ?? it.probability ?? null,
+    }));
+  }
+  return [];
+}
 
 const NPKAnalysisPage = () => {
   const router = useRouter();
@@ -22,8 +42,8 @@ const NPKAnalysisPage = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [prediction, setPrediction] = useState("");
-  const [cropDetails, setCropDetails] = useState(null);
+  const [predictions, setPredictions] = useState([]);
+  const [cropDetailsMap, setCropDetailsMap] = useState({});
 
   const queryParams = {
     N: params.N ?? "",
@@ -31,172 +51,205 @@ const NPKAnalysisPage = () => {
     K: params.K ?? "",
     temperature: params.temperature ?? "",
     humidity: params.humidity ?? "",
-    pH: params.pH ?? "",
+    ph: params.ph ?? "",
     rainfall: params.rainfall ?? "",
   };
 
   useEffect(() => {
-    const fetchPrediction = async () => {
-      setLoading(true);
-      setError(null);
-      setPrediction("");
-      setCropDetails(null);
-      try {
-        const response = await fetch(PREDICT_API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(queryParams),
-        });
-        const data = await response.json();
+    let cancelled = false;
 
-        if (response.ok && data.prediction) {
-          setPrediction(data.prediction);
-          fetchCropDetails(data.prediction); // Fetch details with prediction name
-        } else if (data.error) {
-          setError(data.error);
-          setLoading(false);
-        } else {
-          setError("Prediction failed. Unexpected server response.");
-          setLoading(false);
-        }
-      } catch (err) {
-        setError("Network error: Could not fetch crop prediction.");
-        setLoading(false);
-      }
-    };
-
-    const fetchCropDetails = async (cropName) => {
+    const fetchCropInfo = async (cropName) => {
       try {
-        const resp = await fetch(CROP_API_URL, {
+        const r = await fetch(CROP_API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ crop_name: cropName }),
         });
-        const cropData = await resp.json();
-        if (resp.ok && cropData.info) {
-          setCropDetails(cropData.info);
-        } else if (cropData.error) {
-          setCropDetails(null);
-        }
+        const js = await r.json();
+        return r.ok && js.info ? js.info : null;
       } catch {
-        setCropDetails(null);
-      } finally {
-        setLoading(false);
+        return null;
       }
     };
 
-    const areAllParamsFilled = Object.values(queryParams).every(
-      (val) => val !== ""
-    );
-    if (areAllParamsFilled) {
-      fetchPrediction();
-    } else {
-      setError("Missing required inputs for prediction.");
+    const fetchPrediction = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const resp = await fetch(PREDICT_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(queryParams),
+        });
+
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || "Prediction failed");
+
+        const normalized = normalizePredictionResponse(data);
+        if (!normalized.length) throw new Error("Invalid model response");
+
+        if (cancelled) return;
+
+        setPredictions(normalized);
+
+        // Fetch details for each
+        const names = [...new Set(normalized.map((p) => p.name))];
+        for (const name of names) {
+          const info = await fetchCropInfo(name);
+          if (!cancelled) {
+            setCropDetailsMap((prev) => ({ ...prev, [name]: info }));
+          }
+        }
+      } catch (err) {
+        if (!cancelled) setError(err.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    const allFilled = Object.values(queryParams).every((v) => v !== "");
+    if (allFilled) fetchPrediction();
+    else {
+      setError("Missing required inputs.");
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  const renderCropCard = (item, idx) => {
+    const cropInfo = cropDetailsMap[item.name];
+    const c = item.confidence;
+    const confPercent =
+      c != null ? (c <= 1 ? `${Math.round(c * 100)}%` : `${Math.round(c)}%`) : "--";
+
+    return (
+      <View
+        key={idx}
+        style={[
+          styles.cropCard,
+          { marginBottom: 12, padding: 12, borderRadius: 14 },
+        ]}
+      >
+        <View style={styles.cropCardHeader}>
+          <View style={styles.cropInfo}>
+            <Text style={styles.cropName}>{item.name}</Text>
+            <Text style={styles.cropCategory}>{cropInfo?.category ?? "Category"}</Text>
+          </View>
+          <View style={styles.cropStats}>
+            <Text style={styles.cropYield}>
+              {cropInfo?.yield ? cropInfo.yield + " quintals/acre" : "--"}
+            </Text>
+          </View>
+        </View>
+
+        <View style={[styles.cropCardBody, { marginTop: 10 }]}>
+          <Text style={styles.detailText}>🌱 Season: {cropInfo?.season ?? "--"}</Text>
+          <Text style={styles.detailText}>💰 Price: {rupee} {cropInfo?.price ?? "--"}  per quintal</Text>
+          <Text style={styles.detailText}>📊 Confidence: {confPercent}</Text>
+        </View>
+
+        <Text
+          style={[styles.descriptionText, { marginTop: 10 }]}
+          numberOfLines={3}
+        >
+          {cropInfo?.description ??
+            `Description for ${item.name} not available.`}
+        </Text>
+      </View>
+    );
+  };
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{ paddingBottom: 60 }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { marginBottom: 10 }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>NPK Analysis</Text>
-          </View>
+          <Text style={styles.headerTitle}>NPK Analysis</Text>
         </View>
 
         {/* Soil Summary */}
-        <View style={styles.soilSummary}>
+        <View style={[styles.soilSummary, { marginBottom: 20 }]}>
           <Text style={styles.summaryTitle}>Soil Composition</Text>
           <View style={styles.npkContainer}>
-            {["N", "P", "K", "pH"].map((item) => (
+            {["N", "P", "K", "ph"].map((item) => (
               <View key={item} style={styles.npkItem}>
                 <Text style={styles.npkLabel}>{item}</Text>
-                <Text style={styles.npkValue}>{queryParams[item] || "---"}</Text>
+                <Text style={styles.npkValue}>{queryParams[item] || "--"}</Text>
               </View>
             ))}
           </View>
         </View>
 
-        {/* Prediction Results */}
-        <View style={styles.section}>
+        {/* Prediction section */}
+        <View style={[styles.section, { marginBottom: 20 }]}>
           <Text style={styles.sectionTitle}>Crop Recommendation</Text>
           <Text style={styles.sectionSubtitle}>
-            Based on your soil NPK and environmental data.
+            Based on your soil data & environment.
           </Text>
 
           {loading && (
-            <View style={{ marginVertical: 18, alignItems: "center" }}>
+            <View style={{ marginVertical: 20, alignItems: "center" }}>
               <ActivityIndicator size="large" color={COLORS.primary} />
-              <Text style={{ color: COLORS.textSecondary, marginTop: 8 }}>
-                Fetching Prediction...
+              <Text style={{ marginTop: 8, color: COLORS.textSecondary }}>
+                Fetching results...
               </Text>
             </View>
           )}
 
-          {!loading && error && (
-            <Text style={{ color: "red", textAlign: "center", padding: 14 }}>
+          {!!error && !loading && (
+            <Text
+              style={{
+                color: "red",
+                textAlign: "center",
+                padding: 10,
+                marginTop: 10,
+              }}
+            >
               {error}
             </Text>
           )}
 
-          {!loading && !error && prediction && (
-            <TouchableOpacity style={styles.cropCard} activeOpacity={0.7}>
-              <View style={styles.cropCardHeader}>
-                <View style={styles.cropInfo}>
-                  <Text style={styles.cropName}>
-                    {prediction}
-                  </Text>
-                  <Text style={styles.cropCategory}>
-                    {/* {cropDetails?.category ?? "Category Name"} */}
-                    Eggplant
-                  </Text>
-                </View>
-                <View style={styles.cropStats}>
-                  <Text style={styles.cropYield}>
-                    {cropDetails?.yield ? `${cropDetails.yield} quintals/acre` : "-- quintals/acre"}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.cropCardBody}>
-                <Text style={styles.detailText}>🌱 Season: {cropDetails?.season ?? "--"}</Text>
-                <Text style={styles.detailText}>💰 Avg Price: {cropDetails?.price ?? "--"}</Text>
-              </View>
-              <Text
-                style={styles.descriptionText}
-                numberOfLines={3}
-                ellipsizeMode="tail"
-              >
-                {cropDetails?.description
-                  ? cropDetails.description
-                  : `Description about ${prediction} crop not available.`}
-              </Text>
-            </TouchableOpacity>
+          {!loading && !error && predictions.length > 0 && (
+            <View style={{ marginTop: 10 }}>
+              {predictions.map((p, i) => renderCropCard(p, i))}
+            </View>
           )}
         </View>
 
-        {/* Additional Info */}
-        <View style={styles.infoCard}>
+        {/* Info Card */}
+        <View
+          style={[
+            styles.infoCard,
+            { marginTop: 10, marginBottom: 25, paddingVertical: 14 },
+          ]}
+        >
           <Ionicons name="information-circle" size={24} color={COLORS.primary} />
-          <Text style={styles.infoText}>
-            This recommendation is based on your soil's NPK, pH, and weather data. Please consult local experts for field validation.
+          <Text style={[styles.infoText, { marginLeft: 10 }]}>
+            These recommendations are model-based. Please verify with local
+            agricultural experts.
           </Text>
         </View>
 
-        {/* Back to Home Button */}
+        {/* Home Button */}
         <TouchableOpacity
-          style={styles.homeButton}
+          style={[styles.homeButton, { marginBottom: 10 }]}
           onPress={() => router.push("/(tabs)")}
-          activeOpacity={0.8}
         >
           <Ionicons name="home" size={20} color="#fff" />
-          <Text style={styles.homeButtonText}>Done</Text>
+          <Text style={styles.homeButtonText}>Home</Text>
         </TouchableOpacity>
       </ScrollView>
     </>
