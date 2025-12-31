@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "AgriVision",
-    "slug": "AgriVision",
+    "slug": "agrivision",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -47,8 +47,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "a1ef5a17-cb84-4dfa-ab8d-13be46479705"
+        "projectId": "691b15e4-b498-44a6-b357-d83171d25d4a"
       }
-    }
+    },
+    "owner": "muniraju"
   }
 }
