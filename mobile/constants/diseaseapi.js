@@ -1,1 +1,0 @@
-export const API_URL = 'https://agrivision-ml-model-1.onrender.com';  
