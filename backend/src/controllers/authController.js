@@ -23,25 +23,27 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Password must be at least 6 characters' });
     }
 
-    // Check duplicates
-    if (await User.findOne({ email })) {
+    const emailNormalized = email.toLowerCase().trim();
+
+    if (await User.findOne({ email: emailNormalized })) {
       return res.status(409).json({ success: false, error: 'Email already exists' });
     }
+
     if (await User.findOne({ username })) {
       return res.status(409).json({ success: false, error: 'Username already exists' });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
     const profileImage = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
 
     const user = new User({
       username,
-      email,
-      password: hashedPassword,
+      email: emailNormalized,
+      password, // ✅ plain password ONLY
       profileImage,
     });
 
-    await user.save();
+    await user.save(); // 🔐 password hashed by pre-save hook
+
     const token = generateToken(user._id);
 
     res.status(201).json({
@@ -70,7 +72,9 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ success: false, error: 'All fields are required' });
     }
 
-    const user = await User.findOne({ email }).select('+password');
+    const emailNormalized = email.toLowerCase().trim();
+
+    const user = await User.findOne({ email: emailNormalized }).select('+password');
     if (!user) {
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
@@ -82,44 +86,15 @@ const loginUser = async (req, res) => {
 
     const token = generateToken(user._id);
 
-    // Build user profile for response, excluding sensitive info
-    const {
-      _id,
-      username,
-      email: userEmail,
-      phone,
-      farmLocation,
-      farmSize,
-      experience,
-      connectedDevices,
-      farmingType,
-      soilType,
-      irrigationType,
-      lastHarvest,
-      cropsGrown,
-      profileImage,
-      createdAt,
-    } = user;
-
     res.status(200).json({
       success: true,
       token,
       user: {
-        id: _id,
-        username,
-        email: userEmail,
-        phone,
-        farmLocation,
-        farmSize,
-        experience,
-        connectedDevices,
-        farmingType,
-        soilType,
-        irrigationType,
-        lastHarvest,
-        cropsGrown,
-        profileImage,
-        createdAt,
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        profileImage: user.profileImage,
+        createdAt: user.createdAt,
       },
     });
   } catch (error) {
@@ -127,6 +102,7 @@ const loginUser = async (req, res) => {
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 };
+
 
 // -- Profile setup/update --
 const setupProfile = async (req, res) => {
