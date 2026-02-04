@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  ActivityIndicator,
   TextInput,
   KeyboardAvoidingView,
   Platform,
@@ -17,6 +16,25 @@ import { getColors } from "../../constants/colors";
 import { useThemeStore } from "../../store/themeStore";
 import SafeScreen from "../../components/SafeScreen";
 import PageHeader from "../../components/PageHeader";
+
+// Simplified Input Component
+const SimpleInput = ({ label, value, onChangeText, placeholder, icon, unit, COLORS }) => (
+  <View style={styles.inputContainer}>
+    <Text style={[styles.inputLabel, { color: COLORS.textTertiary }]}>{label}</Text>
+    <View style={[styles.inputWrapper, { backgroundColor: COLORS.cardBackground, borderColor: COLORS.border }]}>
+      <Ionicons name={icon} size={20} color={COLORS.primary} style={styles.inputIcon} />
+      <TextInput
+        style={[styles.input, { color: COLORS.textPrimary }]}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={COLORS.textTertiary}
+        keyboardType="numeric"
+      />
+      {unit && <Text style={[styles.unitText, { color: COLORS.textTertiary }]}>{unit}</Text>}
+    </View>
+  </View>
+);
 
 export default function NPKUploadPage() {
   const router = useRouter();
@@ -33,38 +51,18 @@ export default function NPKUploadPage() {
     setFormData((prev) => ({ ...prev, [field]: cleaned }));
   };
 
-  const getCropSuggestions = () => {
+  const handleAnalyze = () => {
     const keys = ["N", "P", "K", "temperature", "humidity", "ph", "rainfall"];
     if (keys.some(k => !formData[k])) {
-      Alert.alert("Missing Fields", "Please complete all environmental parameters.");
+      Alert.alert("Missing Info", "Please fill in all the fields to get an accurate recommendation.");
       return;
     }
 
     router.push({
       pathname: "/(pages)/npkanalysis",
-      params: { ...formData, fileName: "Manual Entry" },
+      params: { ...formData },
     });
   };
-
-  const InputCard = ({ label, field, placeholder, icon, unit }) => (
-    <View style={[styles.inputGroup, { backgroundColor: COLORS.cardBackground }]}>
-      <View style={styles.inputHeader}>
-        <Ionicons name={icon} size={18} color={COLORS.primary} />
-        <Text style={[styles.inputLabel, { color: COLORS.textSecondary }]}>{label}</Text>
-      </View>
-      <View style={styles.fieldRow}>
-        <TextInput
-          style={[styles.input, { color: COLORS.textPrimary }]}
-          value={formData[field]}
-          onChangeText={(v) => updateField(field, v)}
-          placeholder={placeholder}
-          placeholderTextColor={COLORS.textTertiary}
-          keyboardType="numeric"
-        />
-        {unit && <Text style={[styles.unitText, { color: COLORS.textTertiary }]}>{unit}</Text>}
-      </View>
-    </View>
-  );
 
   return (
     <SafeScreen>
@@ -72,40 +70,33 @@ export default function NPKUploadPage() {
         <View style={[styles.container, { backgroundColor: COLORS.background }]}>
           <PageHeader title="NPK Analysis" />
           
-          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            <View style={styles.heroSection}>
-              <Text style={[styles.heroTitle, { color: COLORS.textPrimary }]}>Soil Nutrients</Text>
-              <Text style={[styles.heroSub, { color: COLORS.textTertiary }]}>Enter your soil test results for AI crop advice</Text>
+          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <View style={styles.introSection}>
+              <Text style={[styles.title, { color: COLORS.textPrimary }]}>Enter Soil Details</Text>
+              <Text style={[styles.subtitle, { color: COLORS.textSecondary }]}>Fill in the nutrients and environmental data from your soil test.</Text>
             </View>
 
-            <View style={styles.grid}>
-              <View style={styles.gridRow}>
-                <InputCard label="Nitrogen" field="N" placeholder="120" icon="leaf-outline" unit="mg/kg" />
-                <InputCard label="Phosphorus" field="P" placeholder="45" icon="flask-outline" unit="mg/kg" />
+            <View style={styles.formSection}>
+              <Text style={[styles.sectionHeader, { color: COLORS.primary }]}>SOIL NUTRIENTS</Text>
+              <View style={styles.row}>
+                <SimpleInput label="Nitrogen (N)" value={formData.N} onChangeText={(v) => updateField("N", v)} placeholder="0" icon="leaf-outline" COLORS={COLORS} />
+                <SimpleInput label="Phosphorus (P)" value={formData.P} onChangeText={(v) => updateField("P", v)} placeholder="0" icon="flask-outline" COLORS={COLORS} />
               </View>
-              <View style={styles.gridRow}>
-                <InputCard label="Potassium" field="K" placeholder="100" icon="prism-outline" unit="mg/kg" />
-                <InputCard label="pH Level" field="ph" placeholder="6.5" icon="water-outline" />
+              <View style={styles.row}>
+                <SimpleInput label="Potassium (K)" value={formData.K} onChangeText={(v) => updateField("K", v)} placeholder="0" icon="prism-outline" COLORS={COLORS} />
+                <SimpleInput label="Soil pH" value={formData.ph} onChangeText={(v) => updateField("ph", v)} placeholder="7.0" icon="water-outline" COLORS={COLORS} />
               </View>
-            </View>
 
-            <View style={styles.sectionDivider} />
-
-            <View style={styles.heroSection}>
-              <Text style={[styles.heroTitle, { color: COLORS.textPrimary }]}>Climate Context</Text>
-              <Text style={[styles.heroSub, { color: COLORS.textTertiary }]}>Environmental data for better predictions</Text>
-            </View>
-
-            <View style={styles.grid}>
-              <View style={styles.gridRow}>
-                <InputCard label="Temperature" field="temperature" placeholder="28" icon="thermometer-outline" unit="°C" />
-                <InputCard label="Humidity" field="humidity" placeholder="60" icon="cloud-outline" unit="%" />
+              <Text style={[styles.sectionHeader, { color: COLORS.primary, marginTop: 24 }]}>ENVIRONMENT</Text>
+              <View style={styles.row}>
+                <SimpleInput label="Temperature" value={formData.temperature} onChangeText={(v) => updateField("temperature", v)} placeholder="25" icon="thermometer-outline" unit="°C" COLORS={COLORS} />
+                <SimpleInput label="Humidity" value={formData.humidity} onChangeText={(v) => updateField("humidity", v)} placeholder="50" icon="cloud-outline" unit="%" COLORS={COLORS} />
               </View>
-              <InputCard label="Average Rainfall" field="rainfall" placeholder="250" icon="umbrella-outline" unit="mm" />
+              <SimpleInput label="Average Rainfall" value={formData.rainfall} onChangeText={(v) => updateField("rainfall", v)} placeholder="200" icon="umbrella-outline" unit="mm" COLORS={COLORS} />
             </View>
 
-            <TouchableOpacity style={[styles.submitBtn, { backgroundColor: COLORS.primary }]} onPress={getCropSuggestions} activeOpacity={0.8}>
-              <Text style={styles.submitText}>Get Analysis Results</Text>
+            <TouchableOpacity style={[styles.mainBtn, { backgroundColor: COLORS.primary }]} onPress={handleAnalyze} activeOpacity={0.8}>
+              <Text style={styles.mainBtnText}>Run Analysis</Text>
               <Ionicons name="sparkles" size={20} color="#FFF" />
             </TouchableOpacity>
 
@@ -119,19 +110,41 @@ export default function NPKUploadPage() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { padding: 20 },
-  heroSection: { marginBottom: 20, paddingLeft: 4 },
-  heroTitle: { fontSize: 24, fontWeight: '800', marginBottom: 6 },
-  heroSub: { fontSize: 14, fontWeight: '500' },
-  grid: { gap: 12 },
-  gridRow: { flexDirection: 'row', gap: 12 },
-  inputGroup: { flex: 1, padding: 16, borderRadius: 24, ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 10 }, android: { elevation: 1 } }) },
-  inputHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  inputLabel: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
-  fieldRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
-  input: { fontSize: 20, fontWeight: '800', padding: 0, flex: 1 },
-  unitText: { fontSize: 12, fontWeight: '700', marginBottom: 4 },
-  sectionDivider: { height: 1, marginVertical: 32, backgroundColor: 'rgba(0,0,0,0.03)' },
-  submitBtn: { height: 60, borderRadius: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 40 },
-  submitText: { color: '#FFF', fontSize: 17, fontWeight: '800' }
+  scrollContent: { padding: 24 },
+  introSection: { marginBottom: 32 },
+  title: { fontSize: 26, fontWeight: '800', marginBottom: 8 },
+  subtitle: { fontSize: 15, lineHeight: 22 },
+  
+  formSection: { width: '100%' },
+  sectionHeader: { fontSize: 12, fontWeight: '800', letterSpacing: 1, marginBottom: 16 },
+  row: { flexDirection: 'row', gap: 16 },
+  
+  inputContainer: { flex: 1, marginBottom: 16 },
+  inputLabel: { fontSize: 13, fontWeight: '700', marginBottom: 8, marginLeft: 4 },
+  inputWrapper: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    borderRadius: 16, 
+    borderWidth: 1,
+    paddingHorizontal: 16, 
+    height: 56,
+  },
+  inputIcon: { marginRight: 12 },
+  input: { flex: 1, fontSize: 16, fontWeight: '600' },
+  unitText: { fontSize: 14, fontWeight: '700', marginLeft: 8 },
+
+  mainBtn: { 
+    height: 60, 
+    borderRadius: 20, 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    gap: 12, 
+    marginTop: 24,
+    ...Platform.select({
+      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8 },
+      android: { elevation: 3 }
+    })
+  },
+  mainBtnText: { color: '#FFF', fontSize: 18, fontWeight: '700' }
 });

@@ -8,12 +8,15 @@ import {
   Dimensions,
   FlatList,
   Animated,
+  StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import COLORS from '../constants/colors';
+import { getColors } from '../constants/colors';
+import { useThemeStore } from '../store/themeStore';
+import SafeScreen from '../components/SafeScreen';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const SLIDES = [
   {
@@ -21,26 +24,26 @@ const SLIDES = [
     title: 'Instant Crop Care',
     description: 'Use your camera to find plant diseases and get the right medicine for your crops.',
     icon: 'scan-outline',
-    color: '#2E7D32',
   },
   {
     id: '2',
     title: 'Soil & Farm Monitor',
     description: 'Watch your farm moisture and temperature anywhere, anytime from your phone.',
     icon: 'stats-chart-outline',
-    color: '#000000',
   },
   {
     id: '3',
     title: 'Better Market Prices',
     description: 'Check daily mandi rates and follow our guides to get the best harvest.',
     icon: 'leaf-outline',
-    color: '#2E7D32',
   },
 ];
 
 const Onboarding = () => {
   const router = useRouter();
+  const { isDarkMode } = useThemeStore();
+  const COLORS = getColors(isDarkMode);
+  
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
   const slidesRef = useRef(null);
@@ -52,101 +55,114 @@ const Onboarding = () => {
       } else {
         slidesRef.current?.scrollToIndex({ index: 0 });
       }
-    }, 4000);
+    }, 5000);
 
     return () => clearInterval(timer);
   }, [currentIndex]);
 
   const viewableItemsChanged = useRef(({ viewableItems }) => {
-    setCurrentIndex(viewableItems[0].index);
+    if (viewableItems && viewableItems.length > 0) {
+      setCurrentIndex(viewableItems[0].index);
+    }
   }).current;
 
   const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
   const renderItem = ({ item }) => (
     <View style={styles.slide}>
-      <View style={[styles.iconContainer, { backgroundColor: `${item.color}15` }]}>
-        <Ionicons name={item.icon} size={80} color={item.color} />
+      <View style={[styles.iconContainer, { backgroundColor: `${COLORS.primary}15` }]}>
+        <Ionicons name={item.icon} size={100} color={COLORS.primary} />
       </View>
       <View style={styles.textContainer}>
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.description}>{item.description}</Text>
+        <Text style={[styles.title, { color: COLORS.textPrimary }]}>{item.title}</Text>
+        <Text style={[styles.description, { color: COLORS.textSecondary }]}>{item.description}</Text>
       </View>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.topSection}>
-        <Text style={styles.logo}>AgriVision</Text>
-      </View>
+    <SafeScreen>
+      <View style={[styles.container, { backgroundColor: COLORS.background }]}>
+        <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+        
+        {/* Decorative Background */}
+        <View style={[styles.circle, { backgroundColor: COLORS.primary + '05', top: -100, right: -100, width: 300, height: 300 }]} />
+        <View style={[styles.circle, { backgroundColor: COLORS.primary + '03', bottom: 100, left: -50, width: 200, height: 200 }]} />
 
-      <FlatList
-        data={SLIDES}
-        renderItem={renderItem}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        pagingEnabled
-        bounces={false}
-        keyExtractor={(item) => item.id}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
-          useNativeDriver: false,
-        })}
-        onViewableItemsChanged={viewableItemsChanged}
-        viewabilityConfig={viewConfig}
-        ref={slidesRef}
-      />
-
-      <View style={styles.footer}>
-        <View style={styles.paginator}>
-          {SLIDES.map((_, i) => {
-            const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
-            const dotWidth = scrollX.interpolate({
-              inputRange,
-              outputRange: [10, 20, 10],
-              extrapolate: 'clamp',
-            });
-            const opacity = scrollX.interpolate({
-              inputRange,
-              outputRange: [0.3, 1, 0.3],
-              extrapolate: 'clamp',
-            });
-            return (
-              <Animated.View
-                key={i.toString()}
-                style={[styles.dot, { width: dotWidth, opacity }]}
-              />
-            );
-          })}
+        <View style={styles.topSection}>
+          <Text style={[styles.logo, { color: COLORS.primary }]}>AgriVision</Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => router.replace('/(auth)')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.buttonText}>Get Started</Text>
-          <Ionicons name="arrow-forward" size={20} color="#fff" />
-        </TouchableOpacity>
+        <FlatList
+          data={SLIDES}
+          renderItem={renderItem}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          pagingEnabled
+          bounces={false}
+          keyExtractor={(item) => item.id}
+          onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
+            useNativeDriver: false,
+          })}
+          onViewableItemsChanged={viewableItemsChanged}
+          viewabilityConfig={viewConfig}
+          ref={slidesRef}
+        />
+
+        <View style={styles.footer}>
+          <View style={styles.paginator}>
+            {SLIDES.map((_, i) => {
+              const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
+              const dotWidth = scrollX.interpolate({
+                inputRange,
+                outputRange: [8, 24, 8],
+                extrapolate: 'clamp',
+              });
+              const opacity = scrollX.interpolate({
+                inputRange,
+                outputRange: [0.3, 1, 0.3],
+                extrapolate: 'clamp',
+              });
+              return (
+                <Animated.View
+                  key={i.toString()}
+                  style={[styles.dot, { width: dotWidth, opacity, backgroundColor: COLORS.primary }]}
+                />
+              );
+            })}
+          </View>
+
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: COLORS.primary }]}
+            onPress={() => router.replace('/(auth)')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.buttonText}>Get Started</Text>
+            <Ionicons name="arrow-forward" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
-    </SafeAreaView>
+    </SafeScreen>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+  },
+  circle: {
+    position: 'absolute',
+    borderRadius: 150,
   },
   topSection: {
-    height: 100,
+    height: 80,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 20,
   },
   logo: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '900',
-    color: COLORS.primary,
     letterSpacing: -1,
   },
   slide: {
@@ -156,52 +172,49 @@ const styles = StyleSheet.create({
     padding: 40,
   },
   iconContainer: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 50,
   },
   textContainer: {
     alignItems: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '800',
-    color: COLORS.textPrimary,
     textAlign: 'center',
     marginBottom: 16,
+    letterSpacing: -0.5,
   },
   description: {
-    fontSize: 16,
-    color: COLORS.textSecondary,
+    fontSize: 17,
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 26,
     paddingHorizontal: 20,
+    opacity: 0.8,
   },
   footer: {
-    height: 150,
-    justifyContent: 'space-between',
     paddingHorizontal: 40,
-    paddingBottom: 40,
+    paddingBottom: 50,
   },
   paginator: {
     flexDirection: 'row',
-    height: 64,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 20,
   },
   dot: {
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: COLORS.primary,
-    marginHorizontal: 8,
+    height: 8,
+    borderRadius: 4,
+    marginHorizontal: 4,
   },
   button: {
-    backgroundColor: COLORS.primary,
-    height: 60,
-    borderRadius: 30, // Fully rounded
+    height: 64,
+    borderRadius: 22,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',

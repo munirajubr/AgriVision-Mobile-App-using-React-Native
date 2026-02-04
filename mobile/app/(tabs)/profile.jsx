@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, ScrollView, TouchableOpacity, Alert, Linking, StyleSheet, Platform } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Alert, Linking, StyleSheet, Platform, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { getColors } from "../../constants/colors";
@@ -68,10 +68,14 @@ export default function ProfileScreen() {
           {/* Custom Profile Section */}
           <View style={styles.profileHero}>
             <View style={[styles.avatarBox, { backgroundColor: COLORS.primary }]}>
-              <Text style={styles.avatarInitial}>{user.username?.charAt(0).toUpperCase() || "U"}</Text>
+              {user.profileImage ? (
+                <Image source={{ uri: user.profileImage }} style={styles.avatarImage} />
+              ) : (
+                <Text style={styles.avatarInitial}>{(user.fullName || user.username || "U").charAt(0).toUpperCase()}</Text>
+              )}
             </View>
-            <Text style={[styles.userName, { color: COLORS.textPrimary }]}>{user.username || "Farmer"}</Text>
-            <Text style={[styles.userEmail, { color: COLORS.textTertiary }]}>{user.email}</Text>
+            <Text style={[styles.userName, { color: COLORS.textPrimary }]}>{user.fullName || user.username || "Farmer"}</Text>
+            <Text style={[styles.userEmail, { color: COLORS.textTertiary }]}>@{user.username}</Text>
             
             <TouchableOpacity 
               style={[styles.editBtn, { backgroundColor: `${COLORS.primary}15` }]}
@@ -155,6 +159,7 @@ const styles = StyleSheet.create({
     })
   },
   avatarInitial: { color: '#FFF', fontSize: 40, fontWeight: '700' },
+  avatarImage: { width: 100, height: 100, borderRadius: 50 },
   userName: { fontSize: 24, fontWeight: '700', marginBottom: 4 },
   userEmail: { fontSize: 14, fontWeight: '400', marginBottom: 16 },
   editBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },

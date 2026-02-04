@@ -1,154 +1,145 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { View, Platform } from "react-native";
+import { View, Platform, Text, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getColors } from "../../constants/colors";
 import { useThemeStore } from "../../store/themeStore";
 
-export default function TabLayout() {
+const { width } = Dimensions.get("window");
+
+// Custom Tab Bar to ensure absolute control and zero squashing
+function CustomTabBar({ state, descriptors, navigation, COLORS, isDarkMode }) {
   const insets = useSafeAreaInsets();
+  
+  return (
+    <View style={[
+      styles.tabBarContainer, 
+      { 
+        bottom: Platform.OS === 'ios' ? insets.bottom + 10 : 20,
+        backgroundColor: COLORS.cardBackground,
+        borderColor: COLORS.border,
+        shadowColor: isDarkMode ? '#000' : COLORS.shadow,
+      }
+    ]}>
+      {state.routes.map((route, index) => {
+        const { options } = descriptors[route.key];
+        const isFocused = state.index === index;
+
+        // Skip hidden routes
+        if (options.href === null) return null;
+
+        const onPress = () => {
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
+
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name);
+          }
+        };
+
+        const getIcon = (routeName, focused) => {
+          const icons = {
+            index: focused ? "home" : "home-outline",
+            market: focused ? "stats-chart" : "stats-chart-outline",
+            weather: focused ? "cloud" : "cloud-outline",
+            profile: focused ? "person" : "person-outline",
+          };
+          return icons[routeName] || "square";
+        };
+
+        const getLabel = (routeName) => {
+          const labels = {
+            index: "Home",
+            market: "Market",
+            weather: "Sky",
+            profile: "Me",
+          };
+          return labels[routeName] || routeName;
+        };
+
+        return (
+          <TouchableOpacity
+            key={index}
+            onPress={onPress}
+            activeOpacity={0.7}
+            style={[
+              styles.tabItem,
+              isFocused && { 
+                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(52, 199, 89, 0.1)',
+                flex: 2.2,
+                marginHorizontal: 4,
+              }
+            ]}
+          >
+            <Ionicons 
+              name={getIcon(route.name, isFocused)} 
+              size={22} 
+              color={isFocused ? COLORS.primary : COLORS.textTertiary} 
+              style={{ opacity: isFocused ? 1 : 0.7 }}
+            />
+            {isFocused && (
+              <Text style={[styles.tabLabel, { color: COLORS.primary }]}>
+                {getLabel(route.name)}
+              </Text>
+            )}
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+export default function TabLayout() {
   const { isDarkMode } = useThemeStore();
   const COLORS = getColors(isDarkMode);
 
   return (
     <Tabs
+      tabBar={(props) => <CustomTabBar {...props} COLORS={COLORS} isDarkMode={isDarkMode} />}
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: COLORS.white,
-        tabBarInactiveTintColor: COLORS.textTertiary,
-        tabBarShowLabel: false,
-        tabBarStyle: {
-          position: 'absolute',
-          bottom: 20 + insets.bottom,
-          left: 20,
-          right: 20,
-          backgroundColor: COLORS.cardBackground,
-          borderRadius: 30,
-          height: 70,
-          paddingBottom: 0,
-          paddingTop: 0,
-          borderTopWidth: 0,
-          elevation: 10,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.15,
-          shadowRadius: 12,
-        },
-        tabBarItemStyle: {
-          paddingVertical: 12,
-        },
       }}
+      sceneContainerStyle={{ backgroundColor: COLORS.background }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Dashboard",
-          tabBarIcon: ({ color, focused }) => (
-            <View style={{
-              backgroundColor: focused ? COLORS.primary : 'transparent',
-              paddingHorizontal: focused ? 20 : 12,
-              paddingVertical: 10,
-              borderRadius: 20,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <Ionicons 
-                name={focused ? "grid" : "grid-outline"} 
-                size={24} 
-                color={focused ? COLORS.white : color} 
-              />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="market"
-        options={{
-          title: "Market",
-          tabBarIcon: ({ color, focused }) => (
-            <View style={{
-              backgroundColor: focused ? COLORS.primary : 'transparent',
-              paddingHorizontal: focused ? 20 : 12,
-              paddingVertical: 10,
-              borderRadius: 20,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <Ionicons 
-                name={focused ? "stats-chart" : "stats-chart-outline"} 
-                size={24} 
-                color={focused ? COLORS.white : color} 
-              />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="weather"
-        options={{
-          title: "Weather",
-          tabBarIcon: ({ color, focused }) => (
-            <View style={{
-              backgroundColor: focused ? COLORS.primary : 'transparent',
-              paddingHorizontal: focused ? 20 : 12,
-              paddingVertical: 10,
-              borderRadius: 20,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <Ionicons 
-                name={focused ? "cloud" : "cloud-outline"} 
-                size={24} 
-                color={focused ? COLORS.white : color} 
-              />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="notifications"
-        options={{
-          title: "Notifications",
-          tabBarIcon: ({ color, focused }) => (
-            <View style={{
-              backgroundColor: focused ? COLORS.primary : 'transparent',
-              paddingHorizontal: focused ? 20 : 12,
-              paddingVertical: 10,
-              borderRadius: 20,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <Ionicons 
-                name={focused ? "notifications" : "notifications-outline"} 
-                size={24} 
-                color={focused ? COLORS.white : color} 
-              />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Profile",
-          tabBarIcon: ({ color, focused }) => (
-            <View style={{
-              backgroundColor: focused ? COLORS.primary : 'transparent',
-              paddingHorizontal: focused ? 20 : 12,
-              paddingVertical: 10,
-              borderRadius: 20,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <Ionicons 
-                name={focused ? "person" : "person-outline"} 
-                size={24} 
-                color={focused ? COLORS.white : color} 
-              />
-            </View>
-          ),
-        }}
-      />
+      <Tabs.Screen name="index" options={{ title: "Home" }} />
+      <Tabs.Screen name="market" options={{ title: "Market" }} />
+      <Tabs.Screen name="weather" options={{ title: "Weather" }} />
+      <Tabs.Screen name="profile" options={{ title: "Profile" }} />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBarContainer: {
+    position: 'absolute',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    left: 15,
+    right: 15,
+    height: 72,
+    borderRadius: 36,
+    paddingHorizontal: 8,
+    elevation: 20,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
+    borderWidth: 1,
+  },
+  tabItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 52,
+    borderRadius: 26,
+  },
+  tabLabel: {
+    fontSize: 14,
+    fontWeight: '800',
+    marginLeft: 8,
+  },
+});

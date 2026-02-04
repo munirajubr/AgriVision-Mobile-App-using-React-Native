@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -8,20 +9,27 @@ import {
   Platform,
   SafeAreaView,
   Alert,
+  StyleSheet,
+  Dimensions,
 } from "react-native";
-import { Link } from "expo-router";
-import styles from "../../assets/styles/login.styles";
-import { useState } from "react";
+import { Link, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import COLORS from "../../constants/colors";
-
+import { getColors } from "../../constants/colors";
+import { useThemeStore } from "../../store/themeStore";
 import { useAuthStore } from "../../store/authStore";
+import SafeScreen from "../../components/SafeScreen";
+
+const { width } = Dimensions.get("window");
 
 export default function Login() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  
+  const { isDarkMode } = useThemeStore();
+  const COLORS = getColors(isDarkMode);
   const { isLoading, login } = useAuthStore();
+  const router = useRouter();
 
   const handleLogin = async () => {
     if (!identifier || !password) {
@@ -31,98 +39,227 @@ export default function Login() {
     const result = await login(identifier, password);
 
     if (!result.success) {
-      console.log("Login error:", result.error);
       Alert.alert("Login Failed", result.error || "Unknown error");
     }
   };
 
-
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <SafeAreaView style={styles.container}>
-        <View style={styles.topSection}>
-          <Text style={styles.title}>AgriVision</Text>
-          <Text style={styles.subtitle}>Sign in to your farm assistant</Text>
-        </View>
+    <SafeScreen>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <View style={[styles.container, { backgroundColor: COLORS.background }]}>
+          {/* Decorative Elements */}
+          <View style={[styles.circle1, { backgroundColor: COLORS.primary + "10" }]} />
+          <View style={[styles.circle2, { backgroundColor: COLORS.primary + "05" }]} />
 
-        <View style={styles.formContainer}>
-          {/* IDENTIFIER (EMAIL OR USERNAME) */}
-          <View style={styles.inputGroup}>
-            <View style={styles.inputContainer}>
-              <Ionicons
-                name="person-outline"
-                size={22}
-                color={COLORS.black}
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Email or Username"
-                placeholderTextColor={COLORS.inactive}
-                value={identifier}
-                onChangeText={setIdentifier}
-                autoCapitalize="none"
-              />
+          <View style={styles.topSection}>
+            <View style={[styles.logoContainer, { backgroundColor: COLORS.primary }]}>
+              <Ionicons name="leaf" size={40} color="#FFF" />
             </View>
+            <Text style={[styles.title, { color: COLORS.textPrimary }]}>AgriVision</Text>
+            <Text style={[styles.subtitle, { color: COLORS.textSecondary }]}>
+              Intelligence for sustainable farming
+            </Text>
           </View>
 
-          {/* PASSWORD */}
-          <View style={styles.inputGroup}>
-            <View style={styles.inputContainer}>
-              <Ionicons
-                name="lock-closed-outline"
-                size={22}
-                color={COLORS.black}
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Password"
-                placeholderTextColor={COLORS.inactive}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-              />
-
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeIcon}
-              >
+          <View style={styles.formContainer}>
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: COLORS.textTertiary }]}>USERNAME/EMAIL</Text>
+              <View style={[styles.inputWrapper, { backgroundColor: COLORS.cardBackground }]}>
                 <Ionicons
-                  name={showPassword ? "eye-outline" : "eye-off-outline"}
-                  size={22}
-                  color={COLORS.inactive}
+                  name="person-outline"
+                  size={20}
+                  color={COLORS.primary}
+                  style={styles.inputIcon}
                 />
+                <TextInput
+                  style={[styles.input, { color: COLORS.textPrimary }]}
+                  placeholder="Email or Username"
+                  placeholderTextColor={COLORS.textTertiary}
+                  value={identifier}
+                  onChangeText={setIdentifier}
+                  autoCapitalize="none"
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: COLORS.textTertiary }]}>PASSWORD</Text>
+              <View style={[styles.inputWrapper, { backgroundColor: COLORS.cardBackground }]}>
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={20}
+                  color={COLORS.primary}
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={[styles.input, { color: COLORS.textPrimary }]}
+                  placeholder="Enter your password"
+                  placeholderTextColor={COLORS.textTertiary}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeIcon}
+                >
+                  <Ionicons
+                    name={showPassword ? "eye-outline" : "eye-off-outline"}
+                    size={20}
+                    color={COLORS.textTertiary}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: COLORS.primary }]}
+              onPress={handleLogin}
+              disabled={isLoading}
+              activeOpacity={0.8}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Text style={styles.buttonText}>Sign In</Text>
+                  <Ionicons name="arrow-forward" size={20} color="#fff" style={styles.btnArrow} />
+                </>
+              )}
+            </TouchableOpacity>
+
+            <View style={styles.footer}>
+              <Text style={[styles.footerText, { color: COLORS.textSecondary }]}>New to AgriVision?</Text>
+              <TouchableOpacity onPress={() => router.push("/signup")}>
+                <Text style={[styles.link, { color: COLORS.primary }]}>Create an Account</Text>
               </TouchableOpacity>
             </View>
           </View>
-
-          <TouchableOpacity 
-            style={styles.button} 
-            onPress={handleLogin} 
-            disabled={isLoading}
-            activeOpacity={0.8}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Sign In</Text>
-            )}
-          </TouchableOpacity>
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>New here?</Text>
-            <Link href="/signup" asChild>
-              <TouchableOpacity>
-                <Text style={styles.link}>Create an Account</Text>
-              </TouchableOpacity>
-            </Link>
-          </View>
         </View>
-      </SafeAreaView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 30,
+    justifyContent: "center",
+  },
+  circle1: {
+    position: "absolute",
+    top: -100,
+    right: -100,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+  },
+  circle2: {
+    position: "absolute",
+    bottom: -50,
+    left: -100,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+  },
+  topSection: {
+    alignItems: "center",
+    marginBottom: 40,
+  },
+  logoContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+    ...Platform.select({
+      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20 },
+      android: { elevation: 5 },
+    }),
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: "800",
+    marginBottom: 8,
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 16,
+    fontWeight: "500",
+    textAlign: "center",
+    opacity: 0.8,
+  },
+  formContainer: {
+    width: "100%",
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 60,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    ...Platform.select({
+      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 },
+      android: { elevation: 2 },
+    }),
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  eyeIcon: {
+    padding: 8,
+  },
+  button: {
+    height: 60,
+    borderRadius: 20,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 20,
+    ...Platform.select({
+      ios: { shadowColor: "#34C759", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 15 },
+      android: { elevation: 8 },
+    }),
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  btnArrow: {
+    marginLeft: 10,
+  },
+  footer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 30,
+    gap: 8,
+  },
+  footerText: {
+    fontSize: 15,
+  },
+  link: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+});

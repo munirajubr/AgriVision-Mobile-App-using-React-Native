@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getColors } from '../../constants/colors';
 import { useThemeStore } from '../../store/themeStore';
 import { useAuthStore } from '../../store/authStore';
+import { useDashboardStore } from '../../store/dashboardStore';
 import SafeScreen from '../../components/SafeScreen';
 
 const WEATHER_API_KEY = process.env.EXPO_PUBLIC_WEATHER_API_KEY;
@@ -31,6 +32,8 @@ export default function WeatherScreen() {
     return 'partly-sunny';
   };
 
+  const { setWeatherData } = useDashboardStore();
+  
   const fetchWeather = useCallback(async (cityName) => {
     if (!WEATHER_API_KEY) return;
     setLoading(true);
@@ -38,13 +41,22 @@ export default function WeatherScreen() {
       const resp = await fetch(`${BASE_URL}/forecast.json?key=${WEATHER_API_KEY}&q=${cityName}&days=7`);
       const data = await resp.json();
       if (data.current) {
-        setCurrentWeather({ temp: Math.round(data.current.temp_c), condition: data.current.condition.text, icon: getWeatherIcon(data.current.condition.text), humidity: data.current.humidity, wind: Math.round(data.current.wind_kph), uv: data.current.uv });
+        const weather = { 
+          temp: Math.round(data.current.temp_c), 
+          condition: data.current.condition.text, 
+          icon: getWeatherIcon(data.current.condition.text), 
+          humidity: data.current.humidity, 
+          wind: Math.round(data.current.wind_kph), 
+          uv: data.current.uv 
+        };
+        setCurrentWeather(weather);
+        setWeatherData(weather); // SYNC TO HOME
         const h = new Date().getHours();
         setHourlyForecast(data.forecast.forecastday[0].hour.slice(h, h + 12).map(hr => ({ time: new Date(hr.time).getHours(), temp: Math.round(hr.temp_c), icon: getWeatherIcon(hr.condition.text) })));
         setWeeklyForecast(data.forecast.forecastday.map(day => ({ day: new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' }), high: Math.round(day.day.maxtemp_c), low: Math.round(day.day.mintemp_c), icon: getWeatherIcon(day.day.condition.text), cond: day.day.condition.text })));
       }
     } catch { Alert.alert('Error', 'Weather data unreachable.'); } finally { setLoading(false); }
-  }, []);
+  }, [setWeatherData]);
 
   useEffect(() => { fetchWeather(location); }, [location]);
 

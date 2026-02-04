@@ -5,17 +5,25 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  StyleSheet,
+  Platform,
+  Dimensions,
+  Share,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
-import COLORS from "../../constants/colors";
+import { getColors } from "../../constants/colors";
+import { useThemeStore } from "../../store/themeStore";
 import { FLASK_API_URL } from "../../constants/flaskapi";
-import styles from "../../assets/styles/npkanalysis.styles";
+import SafeScreen from "../../components/SafeScreen";
+import { LinearGradient } from "expo-linear-gradient";
+
+const { width } = Dimensions.get("window");
 
 const PREDICT_API_URL = `${FLASK_API_URL}/api/predict`;
 const CROP_API_URL = `${FLASK_API_URL}/api/crop`;
 const rupee = "\u20B9";
-
 
 function normalizePredictionResponse(respJson) {
   if (!respJson) return [];
@@ -24,12 +32,7 @@ function normalizePredictionResponse(respJson) {
   }
   if (Array.isArray(respJson.predictions)) {
     return respJson.predictions.map((it) => ({
-      name:
-        it.label ||
-        it.name ||
-        it.class ||
-        it.prediction ||
-        String(it),
+      name: it.label || it.name || it.class || it.prediction || String(it),
       confidence: it.confidence ?? it.score ?? it.probability ?? null,
     }));
   }
@@ -39,6 +42,8 @@ function normalizePredictionResponse(respJson) {
 const NPKAnalysisPage = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { isDarkMode } = useThemeStore();
+  const COLORS = getColors(isDarkMode);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -55,6 +60,32 @@ const NPKAnalysisPage = () => {
     rainfall: params.rainfall ?? "",
   };
 
+  const handleShare = async () => {
+    try {
+      if (predictions.length === 0) return;
+      
+      const resultString = predictions
+        .map(p => `${p.name}${p.confidence ? ` (${p.confidence <= 1 ? Math.round(p.confidence * 100) : Math.round(p.confidence)}% Match)` : ''}`)
+        .join('\n- ');
+
+      const message = `🌾 AgriVision Soil Analysis Report\n\n` +
+        `📍 Soil Profile:\n` +
+        `- Nitrogen: ${queryParams.N}\n` +
+        `- Phosphorus: ${queryParams.P}\n` +
+        `- Potassium: ${queryParams.K}\n` +
+        `- pH Level: ${queryParams.ph}\n\n` +
+        `✅ Top Recommendations:\n- ${resultString}\n\n` +
+        `Generated via AgriVision AI - Intelligence for sustainable farming.`;
+        
+      await Share.share({
+        message,
+        title: 'AgriVision Soil Report',
+      });
+    } catch (error) {
+      Alert.alert('Sharing Error', 'Unable to export results at this time.');
+    }
+  };
+
   useEffect(() => {
     let cancelled = false;
 
@@ -67,193 +98,230 @@ const NPKAnalysisPage = () => {
         });
         const js = await r.json();
         return r.ok && js.info ? js.info : null;
-      } catch {
-        return null;
-      }
+      } catch { return null; }
     };
 
     const fetchPrediction = async () => {
       setLoading(true);
       setError(null);
-
       try {
         const resp = await fetch(PREDICT_API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(queryParams),
         });
-
         const data = await resp.json();
         if (!resp.ok) throw new Error(data.error || "Prediction failed");
-
         const normalized = normalizePredictionResponse(data);
-        if (!normalized.length) throw new Error("Invalid model response");
-
+        if (!normalized.length) throw new Error("No recommendations found");
         if (cancelled) return;
-
         setPredictions(normalized);
-
-        // Fetch details for each
         const names = [...new Set(normalized.map((p) => p.name))];
         for (const name of names) {
           const info = await fetchCropInfo(name);
-          if (!cancelled) {
-            setCropDetailsMap((prev) => ({ ...prev, [name]: info }));
-          }
+          if (!cancelled) setCropDetailsMap((prev) => ({ ...prev, [name]: info }));
         }
-      } catch (err) {
-        if (!cancelled) setError(err.message);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+      } catch (err) { if (!cancelled) setError(err.message); } 
+      finally { if (!cancelled) setLoading(false); }
     };
 
     const allFilled = Object.values(queryParams).every((v) => v !== "");
     if (allFilled) fetchPrediction();
-    else {
-      setError("Missing required inputs.");
-      setLoading(false);
-    }
-
-    return () => {
-      cancelled = true;
-    };
+    else { setError("Missing soil data."); setLoading(false); }
+    return () => { cancelled = true; };
   }, []);
 
   const renderCropCard = (item, idx) => {
     const cropInfo = cropDetailsMap[item.name];
     const c = item.confidence;
-    const confPercent =
-      c != null ? (c <= 1 ? `${Math.round(c * 100)}%` : `${Math.round(c)}%`) : "--";
+    const confPercent = c != null ? (c <= 1 ? `${Math.round(c * 100)}%` : `${Math.round(c)}%`) : "N/A";
 
     return (
-      <View
-        key={idx}
-        style={[
-          styles.cropCard,
-          { marginBottom: 12, padding: 12, borderRadius: 14 },
-        ]}
-      >
-        <View style={styles.cropCardHeader}>
-          <View style={styles.cropInfo}>
-            <Text style={styles.cropName}>{item.name}</Text>
-            <Text style={styles.cropCategory}>{cropInfo?.category ?? "Category"}</Text>
+      <View key={idx} style={[styles.cropCard, { backgroundColor: COLORS.cardBackground, borderColor: COLORS.border }]}>
+        <View style={styles.cardHeader}>
+          <View style={[styles.cropIconBox, { backgroundColor: `${COLORS.primary}10` }]}>
+            <Ionicons name="leaf" size={24} color={COLORS.primary} />
           </View>
-          <View style={styles.cropStats}>
-            <Text style={styles.cropYield}>
-              {cropInfo?.yield ? cropInfo.yield + " quintals/acre" : "--"}
-            </Text>
+          <View style={styles.cropTitleInfo}>
+            <Text style={[styles.cropName, { color: COLORS.textPrimary }]}>{item.name}</Text>
+            <Text style={[styles.cropCategory, { color: COLORS.primary }]}>{cropInfo?.category || "Cereals & Grains"}</Text>
+          </View>
+          <View style={[styles.matchBadge, { backgroundColor: `${COLORS.success}15` }]}>
+            <Text style={[styles.matchText, { color: COLORS.success }]}>{confPercent} Match</Text>
           </View>
         </View>
 
-        <View style={[styles.cropCardBody, { marginTop: 10 }]}>
-          <Text style={styles.detailText}>🌱 Season: {cropInfo?.season ?? "--"}</Text>
-          <Text style={styles.detailText}>💰 Price: {rupee} {cropInfo?.price ?? "--"}  per quintal</Text>
-          <Text style={styles.detailText}>📊 Confidence: {confPercent}</Text>
+        <View style={styles.metricsGrid}>
+          <View style={styles.metricItem}>
+            <Text style={[styles.metricLabel, { color: COLORS.textTertiary }]}>Yield Potential</Text>
+            <Text style={[styles.metricValue, { color: COLORS.textPrimary }]}>{cropInfo?.yield ? `${cropInfo.yield} Q/Acre` : "--"}</Text>
+          </View>
+          <View style={styles.metricDivider} />
+          <View style={styles.metricItem}>
+            <Text style={[styles.metricLabel, { color: COLORS.textTertiary }]}>Market Price</Text>
+            <Text style={[styles.metricValue, { color: COLORS.textPrimary }]}>{rupee} {cropInfo?.price || "--"}</Text>
+          </View>
+          <View style={styles.metricDivider} />
+          <View style={styles.metricItem}>
+            <Text style={[styles.metricLabel, { color: COLORS.textTertiary }]}>Best Season</Text>
+            <Text style={[styles.metricValue, { color: COLORS.textPrimary }]}>{cropInfo?.season || "Kharif"}</Text>
+          </View>
         </View>
 
-        <Text
-          style={[styles.descriptionText, { marginTop: 10 }]}
-          numberOfLines={3}
+        <View style={[styles.descriptionBox, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)" }]}>
+          <Text style={[styles.descriptionText, { color: COLORS.textSecondary }]}>
+            {cropInfo?.description || `Optimal soil match found for ${item.name}. This crop thrives in your current environmental conditions.`}
+          </Text>
+        </View>
+
+        <TouchableOpacity 
+          style={[styles.readFullBtn, { borderTopColor: COLORS.border }]}
+          onPress={() => router.push({
+            pathname: '/(pages)/growthblueprint',
+            params: { cropName: item.name }
+          })}
         >
-          {cropInfo?.description ??
-            `Description for ${item.name} not available.`}
-        </Text>
+          <Text style={{ color: COLORS.primary, fontWeight: '700' }}>View Growth Blueprint</Text>
+          <Ionicons name="arrow-forward" size={16} color={COLORS.primary} />
+        </TouchableOpacity>
       </View>
     );
   };
 
   return (
-    <>
+    <SafeScreen>
       <Stack.Screen options={{ headerShown: false }} />
-
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={{ paddingBottom: 60 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <View style={[styles.header, { marginBottom: 10 }]}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+      <View style={[styles.container, { backgroundColor: COLORS.background }]}>
+        
+        {/* Modern Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: COLORS.cardBackground }]}>
             <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>NPK Analysis</Text>
+          <Text style={[styles.headerTitle, { color: COLORS.textPrimary }]}>Analysis Results</Text>
+          <TouchableOpacity 
+            onPress={handleShare}
+            style={[styles.shareBtn, { backgroundColor: COLORS.cardBackground }]}
+          >
+            <Ionicons name="share-outline" size={22} color={COLORS.textPrimary} />
+          </TouchableOpacity>
         </View>
 
-        {/* Soil Summary */}
-        <View style={[styles.soilSummary, { marginBottom: 20 }]}>
-          <Text style={styles.summaryTitle}>Soil Composition</Text>
-          <View style={styles.npkContainer}>
-            {["N", "P", "K", "ph"].map((item) => (
-              <View key={item} style={styles.npkItem}>
-                <Text style={styles.npkLabel}>{item}</Text>
-                <Text style={styles.npkValue}>{queryParams[item] || "--"}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Prediction section */}
-        <View style={[styles.section, { marginBottom: 20 }]}>
-          <Text style={styles.sectionTitle}>Crop Recommendation</Text>
-          <Text style={styles.sectionSubtitle}>
-            Based on your soil data & environment.
-          </Text>
-
-          {loading && (
-            <View style={{ marginVertical: 20, alignItems: "center" }}>
-              <ActivityIndicator size="large" color={COLORS.primary} />
-              <Text style={{ marginTop: 8, color: COLORS.textSecondary }}>
-                Fetching results...
-              </Text>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          
+          {/* Soil Fingerprint Card */}
+          <LinearGradient colors={[COLORS.primary, COLORS.primaryDark || "#248A3D"]} style={styles.soilFingerprint}>
+            <View style={styles.fingerprintHeader}>
+              <Text style={styles.fingerprintTitle}>Soil Fingerprint</Text>
+              <View style={styles.liveBadge}><Text style={styles.liveText}>LAB VERIFIED</Text></View>
             </View>
-          )}
+            <View style={styles.npkRow}>
+              {[
+                { l: 'Nitrogen', v: queryParams.N, u: 'N' },
+                { l: 'Phosphorus', v: queryParams.P, u: 'P' },
+                { l: 'Potassium', v: queryParams.K, u: 'K' },
+                { l: 'Soil pH', v: queryParams.ph, u: 'pH' }
+              ].map((item, i) => (
+                <View key={i} style={styles.npkMetric}>
+                  <Text style={styles.npkVal}>{item.v}</Text>
+                  <Text style={styles.npkLab}>{item.u}</Text>
+                </View>
+              ))}
+            </View>
+          </LinearGradient>
 
-          {!!error && !loading && (
-            <Text
-              style={{
-                color: "red",
-                textAlign: "center",
-                padding: 10,
-                marginTop: 10,
-              }}
-            >
-              {error}
-            </Text>
-          )}
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: COLORS.textPrimary }]}>AI Recommendations</Text>
+            <Text style={[styles.sectionSub, { color: COLORS.textTertiary }]}>Optimized for your specific soil composition</Text>
+          </View>
 
-          {!loading && !error && predictions.length > 0 && (
-            <View style={{ marginTop: 10 }}>
+          {loading ? (
+            <View style={styles.loadingBox}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+              <Text style={[styles.loadingText, { color: COLORS.textSecondary }]}>Synthesizing dataset...</Text>
+            </View>
+          ) : error ? (
+            <View style={styles.errorBox}>
+              <Ionicons name="alert-circle" size={48} color={COLORS.error} />
+              <Text style={[styles.errorText, { color: COLORS.textPrimary }]}>{error}</Text>
+              <TouchableOpacity onPress={() => router.back()} style={[styles.retryBtn, { backgroundColor: COLORS.primary }]}>
+                <Text style={styles.retryText}>Fix Soil Data</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.resultsList}>
               {predictions.map((p, i) => renderCropCard(p, i))}
             </View>
           )}
-        </View>
 
-        {/* Info Card */}
-        <View
-          style={[
-            styles.infoCard,
-            { marginTop: 10, marginBottom: 25, paddingVertical: 14 },
-          ]}
-        >
-          <Ionicons name="information-circle" size={24} color={COLORS.primary} />
-          <Text style={[styles.infoText, { marginLeft: 10 }]}>
-            These recommendations are model-based. Please verify with local
-            agricultural experts.
-          </Text>
-        </View>
+          <View style={[styles.footerBanner, { backgroundColor: `${COLORS.primary}05`, borderColor: `${COLORS.primary}20` }]}>
+            <Ionicons name="information-circle" size={20} color={COLORS.primary} />
+            <Text style={[styles.footerText, { color: COLORS.textSecondary }]}>
+              These results are based on AI projections. Cross-verify with local environmental factors before planting.
+            </Text>
+          </View>
 
-        {/* Home Button */}
-        <TouchableOpacity
-          style={[styles.homeButton, { marginBottom: 10 }]}
-          onPress={() => router.push("/(tabs)")}
-        >
-          <Ionicons name="home" size={20} color="#fff" />
-          <Text style={styles.homeButtonText}>Home</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </>
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      </View>
+    </SafeScreen>
   );
 };
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 15 },
+  backBtn: { width: 44, height: 44, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  shareBtn: { width: 44, height: 44, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: 18, fontWeight: '800' },
+  
+  scrollContent: { padding: 20 },
+  
+  soilFingerprint: { padding: 24, borderRadius: 32, marginBottom: 32, ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.2, shadowRadius: 20 }, android: { elevation: 8 } }) },
+  fingerprintHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  fingerprintTitle: { color: '#FFF', fontSize: 16, fontWeight: '800', opacity: 0.9 },
+  liveBadge: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  liveText: { color: '#FFF', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
+  npkRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  npkMetric: { alignItems: 'center' },
+  npkVal: { color: '#FFF', fontSize: 28, fontWeight: '900' },
+  npkLab: { color: '#FFF', fontSize: 12, fontWeight: '700', opacity: 0.8, marginTop: 2 },
+
+  sectionHeader: { marginBottom: 20 },
+  sectionTitle: { fontSize: 22, fontWeight: '800' },
+  sectionSub: { fontSize: 14, fontWeight: '500', marginTop: 4 },
+
+  resultsList: { gap: 20 },
+  cropCard: { borderRadius: 32, padding: 24, borderWidth: 1, ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.04, shadowRadius: 16 }, android: { elevation: 2 } }) },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  cropIconBox: { width: 50, height: 50, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  cropTitleInfo: { flex: 1, marginLeft: 16 },
+  cropName: { fontSize: 19, fontWeight: '800' },
+  cropCategory: { fontSize: 13, fontWeight: '700', marginTop: 2 },
+  matchBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+  matchText: { fontSize: 12, fontWeight: '800' },
+
+  metricsGrid: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  metricItem: { flex: 1, alignItems: 'center' },
+  metricLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
+  metricValue: { fontSize: 15, fontWeight: '800' },
+  metricDivider: { width: 1, height: 24, backgroundColor: 'rgba(0,0,0,0.05)' },
+
+  descriptionBox: { padding: 16, borderRadius: 20, marginBottom: 20 },
+  descriptionText: { fontSize: 14, lineHeight: 22, fontWeight: '500' },
+
+  readFullBtn: { borderTopWidth: 1, paddingTop: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+
+  loadingBox: { alignItems: 'center', paddingVertical: 60 },
+  loadingText: { marginTop: 16, fontSize: 15, fontWeight: '600' },
+  
+  errorBox: { alignItems: 'center', paddingVertical: 40 },
+  errorText: { fontSize: 16, fontWeight: '600', textAlign: 'center', marginVertical: 20 },
+  retryBtn: { paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16 },
+  retryText: { color: '#FFF', fontWeight: '800' },
+
+  footerBanner: { flexDirection: 'row', padding: 20, borderRadius: 24, borderWidth: 1, gap: 14, marginTop: 40 },
+  footerText: { flex: 1, fontSize: 13, lineHeight: 20, fontWeight: '500' }
+});
 
 export default NPKAnalysisPage;

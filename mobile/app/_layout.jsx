@@ -2,6 +2,7 @@ import { SplashScreen, Stack, useRouter, useSegments } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
+import { useColorScheme } from "react-native";
 
 import { useAuthStore } from "../store/authStore";
 import { useThemeStore } from "../store/themeStore";
@@ -47,15 +48,24 @@ export default function RootLayout() {
   }, [user, token, segments, fontsLoaded]);
 
   const { isDarkMode } = useThemeStore();
+  const systemColorScheme = useColorScheme();
+  const effectiveDarkMode = isDarkMode || (systemColorScheme === 'dark');
+  const backgroundColor = effectiveDarkMode ? "#000000" : "#F2F2F7";
 
   return (
     <SafeAreaProvider>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: isDarkMode ? "#000000" : "#F2F2F7" } }}>
+      <Stack screenOptions={{ 
+        headerShown: false, 
+        contentStyle: { backgroundColor },
+        animation: 'slide_from_right',
+        animationDuration: 400,
+        gestureEnabled: true,
+      }}>
         <Stack.Screen name="index" /> 
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
       </Stack>
-      <StatusBar style={isDarkMode ? "light" : "dark"} />
+      <StatusBar style={effectiveDarkMode ? "light" : "dark"} />
     </SafeAreaProvider>
   );
 }

@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, ScrollView, StyleSheet, Text, TouchableOpacity, Image, Platform } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, ScrollView, StyleSheet, Text, TouchableOpacity, Image, Platform, ActivityIndicator } from 'react-native';
 import Card from '../../components/Card';
 import { getColors } from '../../constants/colors';
 import { useThemeStore } from '../../store/themeStore';
@@ -8,15 +8,60 @@ import { useDashboardStore } from '../../store/dashboardStore';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
+const WEATHER_API_KEY = process.env.EXPO_PUBLIC_WEATHER_API_KEY;
+const BASE_URL = 'https://api.weatherapi.com/v1';
+
 export default function Home() {
   const { isDarkMode } = useThemeStore();
   const COLORS = getColors(isDarkMode);
   const { user } = useAuthStore();
-  const { setActiveTab } = useDashboardStore();
+  const { setActiveTab, weatherData, setWeatherData } = useDashboardStore();
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchHomeWeather = async () => {
+      const location = user?.farmLocation || 'Bangalore';
+      if (!WEATHER_API_KEY) return;
+      
+      try {
+        const resp = await fetch(`${BASE_URL}/current.json?key=${WEATHER_API_KEY}&q=${location}`);
+        const data = await resp.json();
+        if (data.current) {
+          const getWeatherIcon = (cond) => {
+            const c = cond?.toLowerCase() || '';
+            if (c.includes('sunny') || c.includes('clear')) return 'sunny';
+            if (c.includes('cloudy') || c.includes('overcast')) return 'cloudy';
+            if (c.includes('rain') || c.includes('showers')) return 'rainy';
+            if (c.includes('thunder')) return 'thunderstorm';
+            return 'partly-sunny';
+          };
+
+          setWeatherData({
+            temp: Math.round(data.current.temp_c),
+            condition: data.current.condition.text,
+            humidity: data.current.humidity,
+            wind: Math.round(data.current.wind_kph),
+            icon: getWeatherIcon(data.current.condition.text),
+            loading: false
+          });
+        }
+      } catch (error) {
+        console.error("Home weather fetch error:", error);
+      }
+    };
+
+    fetchHomeWeather();
+  }, [user?.farmLocation]);
 
   const handleWeatherPress = () => {
     router.push('/(tabs)/weather');
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "GOOD MORNING";
+    if (hour < 17) return "GOOD AFTERNOON";
+    return "GOOD EVENING";
   };
 
   return (
@@ -29,15 +74,17 @@ export default function Home() {
         {/* Premium Hero Section */}
         <View style={styles.heroSection}>
           <View style={styles.heroLeft}>
-            <Text style={[styles.greetingText, { color: COLORS.textTertiary }]}>GOOD MORNING,</Text>
-            <Text style={[styles.userName, { color: COLORS.textPrimary }]}>{user?.username || "Farmer"} 👋</Text>
+            <Text style={[styles.greetingText, { color: COLORS.textTertiary }]}>{getGreeting()},</Text>
+            <Text style={[styles.userName, { color: COLORS.textPrimary }]}>{user?.fullName || user?.username || "Farmer"} 👋</Text>
           </View>
           <TouchableOpacity 
-            style={[styles.profileButton, { backgroundColor: COLORS.cardBackground }]}
-            onPress={() => router.push('/(tabs)/profile')}
+            style={[styles.notifButton, { backgroundColor: COLORS.cardBackground }]}
+            onPress={() => router.push('/(pages)/notifications')}
           >
-            <View style={[styles.avatarSmall, { backgroundColor: COLORS.primary }]}>
-              <Text style={styles.avatarText}>{user?.username?.charAt(0).toUpperCase() || "U"}</Text>
+            <View style={[styles.notifIconContainer, { backgroundColor: `${COLORS.primary}15` }]}>
+              <Ionicons name="notifications" size={24} color={COLORS.primary} />
+              {/* Optional: Add a badge here if needed */}
+              <View style={[styles.notifBadge, { backgroundColor: COLORS.error }]} />
             </View>
           </TouchableOpacity>
         </View>
@@ -48,30 +95,39 @@ export default function Home() {
           activeOpacity={0.9}
           onPress={handleWeatherPress}
         >
-          <View style={styles.weatherMain}>
-            <View>
-              <Text style={[styles.weatherLabel, { color: COLORS.textTertiary }]}>OUTDOOR TEMPERATURE</Text>
-              <View style={styles.tempRow}>
-                <Text style={[styles.tempMain, { color: COLORS.textPrimary }]}>28°</Text>
-                <Text style={[styles.tempUnit, { color: COLORS.textTertiary }]}>C</Text>
+          {weatherData.loading ? (
+            <View style={{ height: 120, alignItems: 'center', justifyContent: 'center' }}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+              <Text style={{ marginTop: 12, color: COLORS.textTertiary, fontWeight: '600' }}>Fetching Live Weather...</Text>
+            </View>
+          ) : (
+            <>
+              <View style={styles.weatherMain}>
+                <View>
+                  <Text style={[styles.weatherLabel, { color: COLORS.textTertiary }]}>OUTDOOR TEMPERATURE</Text>
+                  <View style={styles.tempRow}>
+                    <Text style={[styles.tempMain, { color: COLORS.textPrimary }]}>{weatherData.temp}°</Text>
+                    <Text style={[styles.tempUnit, { color: COLORS.textTertiary }]}>C</Text>
+                  </View>
+                  <Text style={[styles.weatherCondition, { color: COLORS.primary }]}>{weatherData.condition} • Live Data</Text>
+                </View>
+                <View style={[styles.weatherIconContainer, { backgroundColor: `${COLORS.warning}15` }]}>
+                  <Ionicons name={weatherData.icon} size={42} color={COLORS.warning} />
+                </View>
               </View>
-              <Text style={[styles.weatherCondition, { color: COLORS.primary }]}>Mostly Sunny • Clear Sky</Text>
-            </View>
-            <View style={[styles.weatherIconContainer, { backgroundColor: `${COLORS.warning}15` }]}>
-              <Ionicons name="sunny" size={42} color={COLORS.warning} />
-            </View>
-          </View>
-          <View style={[styles.weatherDivider, { backgroundColor: COLORS.secondaryBackground }]} />
-          <View style={styles.weatherStats}>
-            <View style={styles.weatherStatItem}>
-              <Ionicons name="water-outline" size={16} color={COLORS.info} />
-              <Text style={[styles.weatherStatText, { color: COLORS.textSecondary }]}>62% Humidity</Text>
-            </View>
-            <View style={styles.weatherStatItem}>
-              <Ionicons name="leaf-outline" size={16} color={COLORS.success} />
-              <Text style={[styles.weatherStatText, { color: COLORS.textSecondary }]}>8 km/h Wind</Text>
-            </View>
-          </View>
+              <View style={[styles.weatherDivider, { backgroundColor: COLORS.secondaryBackground }]} />
+              <View style={styles.weatherStats}>
+                <View style={styles.weatherStatItem}>
+                  <Ionicons name="water-outline" size={16} color={COLORS.info} />
+                  <Text style={[styles.weatherStatText, { color: COLORS.textSecondary }]}>{weatherData.humidity}% Humidity</Text>
+                </View>
+                <View style={styles.weatherStatItem}>
+                  <Ionicons name="leaf-outline" size={16} color={COLORS.success} />
+                  <Text style={[styles.weatherStatText, { color: COLORS.textSecondary }]}>{weatherData.wind} km/h Wind</Text>
+                </View>
+              </View>
+            </>
+          )}
         </TouchableOpacity>
 
         {/* Visual Hierarchy: Subtitles and Grids */}
@@ -166,23 +222,33 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: '800',
   },
-  profileButton: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    padding: 4,
+  notifButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 20,
+    padding: 2,
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 },
+      android: { elevation: 2 },
+    }),
   },
-  avatarSmall: {
+  notifIconContainer: {
     width: '100%',
     height: '100%',
-    borderRadius: 23,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
   },
-  avatarText: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: '700',
+  notifBadge: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: '#FFF',
   },
   weatherCard: {
     borderRadius: 30,
@@ -272,7 +338,7 @@ const styles = StyleSheet.create({
   },
   fixedBottomContainer: {
     position: 'absolute',
-    bottom: 24,
+    bottom: 110, // Increased to provide clear separation from the navigation bar
     left: 20,
     right: 20,
     zIndex: 1000,
