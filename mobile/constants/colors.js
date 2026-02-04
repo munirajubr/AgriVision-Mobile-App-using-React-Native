@@ -1,84 +1,85 @@
-const COLORS = {
-  primary: "#037B21",
-  textPrimary: "#037B21",
-  cardBorder: "#9ACAA6",
-  textSecondary: "rgba(0, 0, 0, 0.8)",
-  background: "#FFFFFF",
+// iOS-themed color palette for AgriVision
+// Light and Dark mode support with agriculture-friendly green accent
+
+const LIGHT_COLORS = {
+  // Primary colors - Agriculture green
+  primary: "#34C759", // iOS green
+  primaryLight: "#4CD964",
+  primaryDark: "#248A3D",
+  
+  // Backgrounds
+  background: "#F2F2F7", // iOS light background
   cardBackground: "#FFFFFF",
-  inputBackground: "#F5F5F5",
-  border: "#E0E0E0",
-  textDark: "#000000",
-  placeholderText: "#A0A0A0",
+  secondaryBackground: "#E5E5EA",
+  
+  // Text colors
+  textPrimary: "#000000",
+  textSecondary: "#3C3C43", // iOS secondary text
+  textTertiary: "#8E8E93", // iOS tertiary text
+  placeholderText: "#C7C7CC",
+  
+  // Borders and separators
+  border: "#E5E5EA",
+  separator: "#C6C6C8",
+  
+  // Status colors
+  error: "#FF3B30", // iOS red
+  warning: "#FF9500", // iOS orange
+  success: "#34C759", // iOS green
+  info: "#007AFF", // iOS blue
+  
+  // UI elements
+  inactive: "#C7C7CC",
+  shadow: "rgba(0, 0, 0, 0.1)",
+  overlay: "rgba(0, 0, 0, 0.4)",
+  
+  // Fixed colors
   white: "#FFFFFF",
   black: "#000000",
 };
 
-
-
-// FOREST
-// const COLORS = {
-//   primary: "#4CAF50",
-//   textPrimary: "#2e5a2e",
-//   textSecondary: "#688f68",
-//   textDark: "#1b361b",
-//   placeholderText: "#767676",
-//   background: "#e8f5e9",
-//   cardBackground: "#f1f8f2",
-//   inputBackground: "#f4faf5",
-//   border: "#c8e6c9",
-//   white: "#ffffff",
-//   black: "#000000",
-// };
-
-// RETRO
-/*
-const COLORS = {
-  primary: "#e17055",
-  textPrimary: "#784e2d",
-  textSecondary: "#a58e7c",
-  textDark: "#50372a",
-  placeholderText: "#767676",
-  background: "#ede1d1",
-  cardBackground: "#faf5eb",
-  inputBackground: "#f7f2ea",
-  border: "#e2d6c1",
-  white: "#ffffff",
+const DARK_COLORS = {
+  // Primary colors - Agriculture green (adjusted for dark mode)
+  primary: "#32D74B", // iOS green dark mode
+  primaryLight: "#4CD964",
+  primaryDark: "#248A3D",
+  
+  // Backgrounds
+  background: "#000000", // iOS dark background
+  cardBackground: "#1C1C1E", // iOS elevated dark
+  secondaryBackground: "#2C2C2E",
+  
+  // Text colors
+  textPrimary: "#FFFFFF",
+  textSecondary: "#EBEBF5", // iOS secondary text dark
+  textTertiary: "#8E8E93", // iOS tertiary text dark
+  placeholderText: "#48484A",
+  
+  // Borders and separators
+  border: "#38383A",
+  separator: "#48484A",
+  
+  // Status colors
+  error: "#FF453A", // iOS red dark
+  warning: "#FF9F0A", // iOS orange dark
+  success: "#32D74B", // iOS green dark
+  info: "#0A84FF", // iOS blue dark
+  
+  // UI elements
+  inactive: "#48484A",
+  shadow: "rgba(0, 0, 0, 0.3)",
+  overlay: "rgba(0, 0, 0, 0.6)",
+  
+  // Fixed colors
+  white: "#FFFFFF",
   black: "#000000",
 };
-*/
 
-// OCEAN
-/*
-const COLORS = {
-  primary: "#1976D2", 
-  textPrimary: "#1a4971",
-  textSecondary: "#6d93b8", 
-  textDark: "#0d2b43", 
-  placeholderText: "#767676",
-  background: "#e3f2fd", 
-  cardBackground: "#f5f9ff",
-  inputBackground: "#f0f8ff", 
-  border: "#bbdefb",
-  white: "#ffffff",
-  black: "#000000",
+// Export function to get colors based on theme
+export const getColors = (isDarkMode) => {
+  return isDarkMode ? DARK_COLORS : LIGHT_COLORS;
 };
-*/
 
-// BLOSSOM
-/*
-const COLORS = {
-  primary: "#EC407A", 
-  textPrimary: "#7d2150", 
-  textSecondary: "#b06a8f", 
-  textDark: "#5a1836", 
-  placeholderText: "#767676",
-  background: "#fce4ec", 
-  cardBackground: "#fff5f8", 
-  inputBackground: "#fef8fa", 
-  border: "#f8bbd0",
-  white: "#ffffff",
-  black: "#000000",
-};
-*/
+// Default export for backward compatibility
+export default LIGHT_COLORS;
 
-export default COLORS;

@@ -1,208 +1,65 @@
 import React, { useMemo, useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import COLORS from '../../constants/colors';
+import { getColors } from '../../constants/colors';
+import { useThemeStore } from '../../store/themeStore';
 import { FLASK_API_URL } from '../../constants/flaskapi';
-import styles from '../../assets/styles/diseasediagnosis.styles';
+import SafeScreen from '../../components/SafeScreen';
+import PageHeader from '../../components/PageHeader';
 
-/**
- * DiagnosisPage
- *
- * Accepts a few ways to receive the input record / disease name:
- *  - params.record (JSON string or object)         <-- highest priority
- *  - params.tempKey (key pointing to AsyncStorage) <-- good for large payloads (images/base64)
- *  - params.prediction (string | json)             <-- predicted disease name(s)
- *  - params.issues (json array string)             <-- array of issue names
- *  - params.diseaseInput (json string object)
- *
- * Behavior:
- *  - decide diseaseName from the above precedence
- *  - fetch disease info from Flask API: POST { disease_name }
- *  - show loading / error states
- */
-
-const DiagnosisPage = () => {
+const DiseaseDiagnosisPage = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { isDarkMode } = useThemeStore();
+  const COLORS = getColors(isDarkMode);
 
-  // params that may be provided
   const deviceId = params?.deviceId ?? null;
   const tempKey = params?.tempKey ?? null;
+  const rawRecord = params?.record ?? null;
+  const rawPrediction = params?.prediction ?? null;
 
-  // Raw params that may include record/prediction/issues
-  const rawRecordParam = params?.record ?? null;
-  const rawPredictionParam = params?.prediction ?? null;
-  const rawIssuesParam = params?.issues ?? null;
-  const rawDiseaseInputParam = params?.diseaseInput ?? null;
-  const diagnosisType = params?.diagnosisType ? String(params.diagnosisType) : '';
-  const isDiseaseDiagnosis = ['disease', 'model', 'natural'].includes(diagnosisType) || true; // allow default disease flow
+  const [record, setRecord] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [diseaseInfo, setDiseaseInfo] = useState(null);
+  const [error, setError] = useState(null);
 
-  const [recordFromStorage, setRecordFromStorage] = useState(null);
-  const [loadingRecord, setLoadingRecord] = useState(Boolean(tempKey));
-  const [recordLoadError, setRecordLoadError] = useState(null);
-
-  // load record from tempKey if provided
+  // 1. Resolve the data record
   useEffect(() => {
-    let mounted = true;
     (async () => {
-      if (!tempKey) {
-        setLoadingRecord(false);
-        return;
-      }
       try {
-        setLoadingRecord(true);
-        const raw = await AsyncStorage.getItem(tempKey);
-        if (!mounted) return;
-        if (!raw) {
-          setRecordFromStorage(null);
-          setRecordLoadError('No record found in storage.');
-        } else {
-          try {
-            const parsed = JSON.parse(raw);
-            setRecordFromStorage(parsed);
-            // optional: remove the tempKey to avoid lingering data
-            await AsyncStorage.removeItem(tempKey);
-          } catch (e) {
-            // raw is string (maybe plain text)
-            setRecordFromStorage(raw);
-          }
+        if (tempKey) {
+          const raw = await AsyncStorage.getItem(tempKey);
+          if (raw) setRecord(JSON.parse(raw));
+        } else if (rawRecord) {
+          setRecord(typeof rawRecord === 'string' ? JSON.parse(rawRecord) : rawRecord);
         }
       } catch (e) {
-        console.warn('Failed to load record from AsyncStorage', e);
-        setRecordFromStorage(null);
-        setRecordLoadError('Failed to load stored record.');
+        console.warn('Record parsing failed', e);
       } finally {
-        setLoadingRecord(false);
+        setLoading(false);
       }
     })();
-    return () => {
-      mounted = false;
-    };
-  }, [tempKey]);
+  }, [tempKey, rawRecord]);
 
-  // Parse record param (if provided). Support object or JSON string.
-  const parsedRecordParam = useMemo(() => {
-    if (!rawRecordParam) return null;
-    if (typeof rawRecordParam === 'object') return rawRecordParam;
-    try {
-      return JSON.parse(String(rawRecordParam));
-    } catch {
-      return String(rawRecordParam);
-    }
-  }, [rawRecordParam]);
-
-  // Parsed prediction fallback
-  const parsedPrediction = useMemo(() => {
-    if (rawPredictionParam === undefined || rawPredictionParam === null) return null;
-    if (typeof rawPredictionParam === 'object') return rawPredictionParam;
-    try {
-      return JSON.parse(String(rawPredictionParam));
-    } catch {
-      return String(rawPredictionParam);
-    }
-  }, [rawPredictionParam]);
-
-  // parsed issues (array) fallback
-  const parsedIssues = useMemo(() => {
-    if (!rawIssuesParam) return [];
-    if (Array.isArray(rawIssuesParam)) return rawIssuesParam;
-    try {
-      const v = JSON.parse(String(rawIssuesParam));
-      return Array.isArray(v) ? v : [];
-    } catch {
-      return [String(rawIssuesParam)];
-    }
-  }, [rawIssuesParam]);
-
-  // diseaseInput param (object)
-  const diseaseInput = useMemo(() => {
-    if (!rawDiseaseInputParam) return null;
-    if (typeof rawDiseaseInputParam === 'object') return rawDiseaseInputParam;
-    try {
-      return JSON.parse(String(rawDiseaseInputParam));
-    } catch {
-      return null;
-    }
-  }, [rawDiseaseInputParam]);
-
-  // Determine the "record" to use (priority): parsedRecordParam -> recordFromStorage -> null
-  const activeRecord = parsedRecordParam ?? recordFromStorage ?? null;
-
-  // Determine diseaseName with precedence:
-  // 1. diseaseInput.diseaseName
-  // 2. activeRecord.prediction || activeRecord.predicted_class || activeRecord.model_prediction (various shapes)
-  // 3. parsedPrediction
-  // 4. parsedIssues[0]
-  // 5. null
+  // 2. Resolve the disease name
   const diseaseName = useMemo(() => {
-    // 1
-    if (diseaseInput && diseaseInput.diseaseName) return String(diseaseInput.diseaseName);
-
-    // 2 - try to extract from activeRecord (multiple common keys)
-    if (activeRecord && typeof activeRecord === 'object') {
-      const p =
-        activeRecord.prediction ??
-        activeRecord.model_prediction ??
-        activeRecord.model_prediction_raw ??
-        activeRecord.predicted_label ??
-        activeRecord.predicted_class ??
-        activeRecord.class ??
-        null;
-      if (p) {
-        if (Array.isArray(p)) return String(p[0]);
-        if (typeof p === 'object') {
-          return String(p.class ?? p.label ?? JSON.stringify(p));
-        }
-        return String(p);
-      }
-      // sometimes the record itself is just a string disease name
-      if (typeof activeRecord === 'string') return activeRecord;
+    if (rawPrediction) return String(decodeURIComponent(rawPrediction));
+    if (record) {
+      const p = record.prediction ?? record.predicted_class ?? record.model_prediction ?? record.class ?? null;
+      if (p) return typeof p === 'object' ? (p.class ?? p.label) : String(p);
     }
-
-    // 3
-    if (parsedPrediction) {
-      if (Array.isArray(parsedPrediction)) return String(parsedPrediction[0]);
-      if (typeof parsedPrediction === 'object') return String(parsedPrediction.class ?? JSON.stringify(parsedPrediction));
-      return String(parsedPrediction);
-    }
-
-    // 4
-    if (parsedIssues && parsedIssues.length > 0) return String(parsedIssues[0]);
-
     return null;
-  }, [diseaseInput, activeRecord, parsedPrediction, parsedIssues]);
+  }, [record, rawPrediction]);
 
-  // disease info state and fetch status
-  const [diseaseInfo, setDiseaseInfo] = useState(null);
-  const [loadingInfo, setLoadingInfo] = useState(false);
-  const [errorInfo, setErrorInfo] = useState(null);
-
-  const getDisplayText = (value) => {
-    if (value === null || value === undefined || value === '') return 'Details not available';
-    return String(value);
-  };
-
-  // Fetch disease info from FLASK_API_URL using diseaseName
+  // 3. Fetch detailed disease info
   useEffect(() => {
-    let mounted = true;
-    const fetchDiseaseInfo = async () => {
-      if (!isDiseaseDiagnosis) {
-        setDiseaseInfo(null);
-        setErrorInfo('Not a disease diagnosis flow.');
-        return;
-      }
-      if (!diseaseName) {
-        setDiseaseInfo(null);
-        setErrorInfo('No disease name found in input or issues.');
-        return;
-      }
+    if (!diseaseName) return;
 
-      setLoadingInfo(true);
-      setErrorInfo(null);
-      setDiseaseInfo(null);
-
+    const fetchInfo = async () => {
+      setLoading(true);
+      setError(null);
       try {
         const url = `${FLASK_API_URL.replace(/\/$/, '')}/api/disease`;
         const res = await fetch(url, {
@@ -210,161 +67,162 @@ const DiagnosisPage = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ disease_name: diseaseName }),
         });
-
-        const text = await res.text();
-        let data = {};
-        try {
-          data = JSON.parse(text);
-        } catch {
-          data = {};
-        }
-
-        if (!mounted) return;
-
-        if (res.ok && data?.info && Object.keys(data.info).length > 0) {
+        const data = await res.json();
+        if (res.ok && data.info) {
           setDiseaseInfo(data.info);
-        } else if (data?.error) {
-          setErrorInfo(data.error);
         } else {
-          setErrorInfo('No detailed info available.');
+          setError(data.error || 'Detailed pathology data not available for this condition.');
         }
       } catch (e) {
-        console.warn('Disease info fetch failed', e);
-        if (!mounted) return;
-        setErrorInfo('Failed to fetch disease information.');
+        setError('Network connectivity issues. Please try again.');
       } finally {
-        if (mounted) setLoadingInfo(false);
+        setLoading(false);
       }
     };
+    fetchInfo();
+  }, [diseaseName]);
 
-    fetchDiseaseInfo();
-    return () => {
-      mounted = false;
-    };
-  }, [isDiseaseDiagnosis, diseaseName]);
+  const ResolutionCard = ({ title, content, icon, color }) => (
+    <View style={[styles.resCard, { backgroundColor: COLORS.cardBackground }]}>
+      <View style={styles.resHeader}>
+        <View style={[styles.resIcon, { backgroundColor: `${color}10` }]}>
+          <Ionicons name={icon} size={20} color={color} />
+        </View>
+        <Text style={[styles.resTitle, { color: COLORS.textPrimary }]}>{title}</Text>
+      </View>
+      <Text style={[styles.resContent, { color: COLORS.textSecondary }]}>{content || 'Information pending further analysis.'}</Text>
+    </View>
+  );
 
-  // render UI
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Disease Diagnosis</Text>
-      </View>
+    <SafeScreen>
+      <View style={[styles.container, { backgroundColor: COLORS.background }]}>
+        <PageHeader title="Analysis Result" />
 
-      {/* Source info row */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Source</Text>
-        <View style={[styles.detailCard, { paddingVertical: 10 }]}>
-          <Text style={{ fontWeight: '700' }}>Device</Text>
-          <Text>{deviceId ?? 'N/A'}</Text>
-
-          {tempKey ? (
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {loading ? (
+            <View style={styles.loaderCenter}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+              <Text style={[styles.loaderText, { color: COLORS.textTertiary }]}>Analyzing Pathology Data...</Text>
+            </View>
+          ) : (
             <>
-              <Text style={{ marginTop: 8, fontWeight: '700' }}>Stored Record Key</Text>
-              <Text numberOfLines={1}>{tempKey}</Text>
+              {/* Clean Identification Section */}
+              <View style={styles.idContainer}>
+                <Text style={[styles.idLabel, { color: COLORS.textTertiary }]}>CONDITION IDENTIFIED</Text>
+                <Text style={[styles.idValue, { color: COLORS.textPrimary }]}>{diseaseName || 'Healthy State'}</Text>
+                
+                <View style={[styles.sourceBadge, { backgroundColor: COLORS.cardBackground }]}>
+                  <Ionicons name={deviceId ? "hardware-chip" : "scan"} size={14} color={COLORS.primary} />
+                  <Text style={[styles.sourceText, { color: COLORS.textSecondary }]}>
+                    Source: {deviceId ? `Sensor #${deviceId}` : 'Vision Pro'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Status Bar Row */}
+              <View style={styles.metricsRow}>
+                <View style={[styles.metricCard, { backgroundColor: COLORS.cardBackground }]}>
+                  <Text style={[styles.metricVal, { color: COLORS.error }]}>{diseaseInfo?.['Severity Level'] || 'Low'}</Text>
+                  <Text style={[styles.metricLab, { color: COLORS.textTertiary }]}>Severity</Text>
+                </View>
+                <View style={[styles.metricCard, { backgroundColor: COLORS.cardBackground }]}>
+                  <Text style={[styles.metricVal, { color: COLORS.primary }]}>{diseaseInfo?.['Days to Recovery'] || 'N/A'}</Text>
+                  <Text style={[styles.metricLab, { color: COLORS.textTertiary }]}>Est. Recovery</Text>
+                </View>
+              </View>
+
+              {/* Problem Description */}
+              <View style={[styles.descCard, { backgroundColor: `${COLORS.primary}05` }]}>
+                <View style={styles.descHeader}>
+                  <Ionicons name="information-circle" size={22} color={COLORS.primary} />
+                  <Text style={[styles.descTitle, { color: COLORS.textPrimary }]}>Case Summary</Text>
+                </View>
+                <Text style={[styles.descText, { color: COLORS.textSecondary }]}>
+                  {diseaseInfo?.['Symptoms Description'] || 'The plant tissues appear consistent with normal physiological development. Continue regular monitoring.'}
+                </Text>
+              </View>
+
+              <Text style={[styles.sectionTitle, { color: COLORS.textPrimary }]}>Recovery Protocols</Text>
+
+              {error ? (
+                <View style={styles.errorBox}>
+                  <Ionicons name="help-buoy-outline" size={40} color={COLORS.textTertiary} />
+                  <Text style={[styles.errorText, { color: COLORS.textSecondary }]}>{error}</Text>
+                </View>
+              ) : (
+                <View style={styles.resolutionsList}>
+                  <ResolutionCard 
+                    title="Impact Assessment" 
+                    content={diseaseInfo?.['Impact on Yield']} 
+                    icon="trending-down" 
+                    color={COLORS.error} 
+                  />
+                  <ResolutionCard 
+                    title="Natural Mitigation" 
+                    content={diseaseInfo?.['Natural Resolution']} 
+                    icon="leaf" 
+                    color={COLORS.success} 
+                  />
+                  <ResolutionCard 
+                    title="Chemical Control" 
+                    content={diseaseInfo?.['Chemical Resolution']} 
+                    icon="flask" 
+                    color={COLORS.info} 
+                  />
+                </View>
+              )}
+
+              <TouchableOpacity 
+                style={[styles.finishBtn, { backgroundColor: COLORS.primary }]} 
+                onPress={() => router.back()}
+              >
+                <Text style={styles.finishBtnText}>Acknowledge & Save</Text>
+              </TouchableOpacity>
             </>
-          ) : null}
-
-          {parsedRecordParam ? (
-            <>
-              <Text style={{ marginTop: 8, fontWeight: '700' }}>Record (param)</Text>
-              <Text numberOfLines={2}>{typeof parsedRecordParam === 'string' ? parsedRecordParam : JSON.stringify(parsedRecordParam)}</Text>
-            </>
-          ) : null}
-
-          {loadingRecord && <Text style={{ marginTop: 8 }}>Loading stored record...</Text>}
-          {recordLoadError && <Text style={{ marginTop: 8, color: 'red' }}>{recordLoadError}</Text>}
-        </View>
+          )}
+          <View style={{ height: 100 }} />
+        </ScrollView>
       </View>
-
-      {/* Issues / predicted disease */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Issues Detected</Text>
-
-        {diseaseName ? (
-          <View style={styles.issueCard}>
-            <Ionicons name="alert-circle" size={20} color="#F44336" />
-            <Text style={styles.issueText}>{String(diseaseName)}</Text>
-          </View>
-        ) : parsedIssues.length > 0 ? (
-          parsedIssues.map((issue, idx) => (
-            <View key={idx} style={styles.issueCard}>
-              <Ionicons name="alert-circle" size={20} color="#F44336" />
-              <Text style={styles.issueText}>{String(issue)}</Text>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.emptyText}>No issues detected.</Text>
-        )}
-      </View>
-
-      {/* Loading and Error for disease info */}
-      {loadingInfo && (
-        <View style={{ padding: 16, alignItems: 'center' }}>
-          <ActivityIndicator size="small" color={COLORS.primary} />
-          <Text style={{ marginTop: 8 }}>Loading disease details...</Text>
-        </View>
-      )}
-
-      {!loadingInfo && errorInfo && (
-        <Text style={{ color: 'red', textAlign: 'center', padding: 10 }}>{errorInfo}</Text>
-      )}
-
-      {/* Disease summary and details */}
-      {!loadingInfo && !errorInfo && diseaseInfo && (
-        <>
-          {/* Top summary */}
-          <View
-            style={[
-              styles.section,
-              { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 5 },
-            ]}
-          >
-            <View style={{ alignItems: 'center' }}>
-              <Text style={styles.twoColumnLabel}>
-                {getDisplayText(diseaseInfo['Days to Recovery'])}
-              </Text>
-              <Text style={styles.twoColumnValue}>Days to Recovery</Text>
-            </View>
-            <View style={{ alignItems: 'center' }}>
-              <Text style={styles.twoColumnLabel}>
-                {getDisplayText(diseaseInfo['Severity Level'])}
-              </Text>
-              <Text style={styles.twoColumnValue}>Severity Level</Text>
-            </View>
-          </View>
-
-          {/* Detailed cards */}
-          {[
-            { label: 'Symptoms Description', key: 'Symptoms Description' },
-            { label: 'Impact on Yield', key: 'Impact on Yield' },
-            { label: 'Natural Resolution', key: 'Natural Resolution' },
-            { label: 'Chemical Resolution', key: 'Chemical Resolution' },
-            { label: 'Cultural Resolution', key: 'Cultural control ' },
-          ].map(({ label, key }) => (
-            <View key={key} style={styles.detailCard}>
-              <Text style={styles.detailCardTitle}>{label}</Text>
-              <Text style={styles.detailCardDescription}>
-                {getDisplayText(diseaseInfo[key])}
-              </Text>
-            </View>
-          ))}
-        </>
-      )}
-
-      {/* Done Button */}
-      <TouchableOpacity
-        style={styles.homeButton}
-        onPress={() => router.push('/(tabs)')}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.homeButtonText}>Done</Text>
-      </TouchableOpacity>
-    </ScrollView>
+    </SafeScreen>
   );
 };
 
-export default DiagnosisPage;
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  scrollContent: { padding: 24 },
+  loaderCenter: { marginTop: 100, alignItems: 'center', gap: 20 },
+  loaderText: { fontSize: 16, fontWeight: '600' },
+  
+  idContainer: { alignItems: 'center', marginBottom: 32 },
+  idLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 1.5, marginBottom: 8 },
+  idValue: { fontSize: 34, fontWeight: '800', textAlign: 'center', marginBottom: 16 },
+  sourceBadge: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+  sourceText: { fontSize: 12, fontWeight: '700' },
+
+  metricsRow: { flexDirection: 'row', gap: 16, marginBottom: 24 },
+  metricCard: { flex: 1, padding: 20, borderRadius: 24, alignItems: 'center', ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 10 }, android: { elevation: 1 } }) },
+  metricVal: { fontSize: 18, fontWeight: '800', marginBottom: 4 },
+  metricLab: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+
+  descCard: { padding: 24, borderRadius: 28, marginBottom: 32 },
+  descHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
+  descTitle: { fontSize: 18, fontWeight: '800' },
+  descText: { fontSize: 15, lineHeight: 24, fontWeight: '500' },
+
+  sectionTitle: { fontSize: 20, fontWeight: '800', marginBottom: 16, marginLeft: 4 },
+  resolutionsList: { gap: 16 },
+  resCard: { padding: 20, borderRadius: 24 },
+  resHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
+  resIcon: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  resTitle: { fontSize: 16, fontWeight: '700' },
+  resContent: { fontSize: 14, lineHeight: 22, fontWeight: '500' },
+
+  errorBox: { alignItems: 'center', padding: 40, gap: 12 },
+  errorText: { textAlign: 'center', fontSize: 14, fontWeight: '500', lineHeight: 20 },
+  
+  finishBtn: { height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginTop: 40, ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 15 }, android: { elevation: 4 } }) },
+  finishBtnText: { color: '#FFF', fontSize: 17, fontWeight: '800' }
+});
+
+export default DiseaseDiagnosisPage;

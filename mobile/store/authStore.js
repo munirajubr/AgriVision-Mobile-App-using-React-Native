@@ -9,13 +9,13 @@ export const useAuthStore = create((set, get) => ({
   isCheckingAuth: true,
 
   // Register
-  register: async (username, email, password) => {
+  register: async (fullName, email, password) => {
     set({ isLoading: true });
     try {
       const response = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ fullName, email, password }),
       });
       const data = await response.json().catch(async () => {
         const text = await response.text();
@@ -33,14 +33,14 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // Login
-  login: async (email, password) => {
+  // Login (Supports email or username)
+  login: async (identifier, password) => {
     set({ isLoading: true });
     try {
       const response = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ identifier, password }),
       });
       const data = await response.json().catch(async () => {
         const text = await response.text();
@@ -82,6 +82,41 @@ export const useAuthStore = create((set, get) => ({
       return { success: true };
     } catch (error) {
       console.error("[SetupProfile] Error:", error);
+      set({ isLoading: false });
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Update Profile
+  updateProfile: async (profileDetails) => {
+    set({ isLoading: true });
+    try {
+      const token = get().token;
+      if (!token) throw new Error("Not authenticated");
+      const response = await fetch(`${API_URL}/api/auth/profile`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(profileDetails),
+      });
+
+      let data;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        data = { message: text };
+      }
+
+      if (!response.ok) throw new Error(data.error || data.message || "Update failed");
+      await AsyncStorage.setItem("user", JSON.stringify(data.user));
+      set({ user: data.user, isLoading: false });
+      return { success: true };
+    } catch (error) {
+      console.error("[UpdateProfile] Error:", error);
       set({ isLoading: false });
       return { success: false, error: error.message };
     }

@@ -1,10 +1,10 @@
 import { SplashScreen, Stack, useRouter, useSegments } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import SafeScreen from "../components/SafeScreen";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 
 import { useAuthStore } from "../store/authStore";
+import { useThemeStore } from "../store/themeStore";
 import { useEffect } from "react";
 
 SplashScreen.preventAutoHideAsync();
@@ -29,22 +29,33 @@ export default function RootLayout() {
 
   // handle navigation based on the auth state
   useEffect(() => {
-    const inAuthScreen = segments[0] === "(auth)";
+    if (!fontsLoaded) return;
+
+    const inAuthGroup = segments[0] === "(auth)";
+    const inRootIndex = segments.length === 0 || (segments.length === 1 && segments[0] === "index");
     const isSignedIn = user && token;
 
-    if (!isSignedIn && !inAuthScreen) router.replace("/(auth)");
-    else if (isSignedIn && inAuthScreen) router.replace("/(tabs)");
-  }, [user, token, segments]);
+    if (!isSignedIn) {
+      if (!inAuthGroup && !inRootIndex) {
+        router.replace("/");
+      }
+    } else {
+      if (inAuthGroup || inRootIndex) {
+        router.replace("/(tabs)");
+      }
+    }
+  }, [user, token, segments, fontsLoaded]);
+
+  const { isDarkMode } = useThemeStore();
 
   return (
     <SafeAreaProvider>
-      <SafeScreen>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="(auth)" />
-        </Stack>
-      </SafeScreen>
-      <StatusBar style="dark" />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: isDarkMode ? "#000000" : "#F2F2F7" } }}>
+        <Stack.Screen name="index" /> 
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+      <StatusBar style={isDarkMode ? "light" : "dark"} />
     </SafeAreaProvider>
   );
 }

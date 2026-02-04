@@ -1,4 +1,3 @@
-// styles/create.styles.js
 import { StyleSheet } from "react-native";
 import COLORS from "../../constants/colors";
 
@@ -8,103 +7,112 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   contentContainer: {
-    paddingVertical: 16,
-    paddingBottom: 32,
+    paddingHorizontal: 24,
+    paddingTop: 10,
+    paddingBottom: 40,
   },
   centerContent: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: COLORS.background,
   },
   loadingText: {
     fontSize: 16,
-    color: COLORS.textSecondary,
+    fontWeight: '800',
+    color: COLORS.black,
+    marginTop: 12,
   },
   section: {
-    marginTop: 24,
+    width: '100%',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingTop: 20,
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginHorizontal: 16,
-    marginBottom: 16,
+    fontWeight: '900',
+    color: COLORS.black,
+    letterSpacing: -0.5,
+  },
+  sectionTitleSmall: {
+    fontSize: 12,
+    color: COLORS.primary,
+    fontWeight: '800',
+    marginBottom: 20,
+    textTransform: 'uppercase',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionButtonSmall: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+    backgroundColor: COLORS.white,
+    borderWidth: 1.5,
+    borderColor: COLORS.black,
+  },
+  actionButtonText: {
+    color: COLORS.black,
+    fontWeight: '800',
+    fontSize: 12,
+    textTransform: 'uppercase',
   },
   emptyContainer: {
     alignItems: 'center',
-    paddingVertical: 48,
-    paddingHorizontal: 32,
+    paddingVertical: 60,
+    paddingHorizontal: 30,
+    backgroundColor: COLORS.white,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: COLORS.black,
+    marginTop: 20,
   },
   emptyText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '900',
+    color: COLORS.black,
+    marginTop: 16,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    color: COLORS.placeholderText,
+    color: COLORS.textSecondary,
     textAlign: 'center',
+    lineHeight: 20,
+    fontWeight: '600',
   },
-  container: {
-    flex: 1,
+  errorContainer: {
+    marginVertical: 16,
+    padding: 16,
+    backgroundColor: COLORS.white,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: COLORS.error,
   },
-  contentContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-  },
-  section: {
-    width: '100%',
-    maxWidth: 960,
-    alignSelf: 'center',
-  },
-  sectionTitleSmall: {
-    color: '#666',
+  errorText: {
+    color: COLORS.error,
+    fontWeight: '800',
     marginBottom: 12,
-    fontSize: 13,
   },
-
-  emptyContainer: {
-    marginTop: 24,
-    padding: 20,
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#eee',
+  retryButton: {
+    backgroundColor: COLORS.error,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
   },
-  emptyText: {
-    fontWeight: '700',
-    color: '#333',
-    marginBottom: 6,
-  },
-  emptySubtext: {
-    color: '#777',
-    fontSize: 13,
-  },
-
-  // small helpers used across screens
-  centerContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 8,
-    color: '#444',
-  },
-
-  /* History list item (keeps consistent look) */
-  historyItem: {
-    marginBottom: 12,
-    padding: 12,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#eee',
+  retryButtonText: {
+    color: COLORS.white,
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
 });
-
 
 export default styles;

@@ -1,71 +1,96 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  SafeAreaView,
-  ScrollView,
-} from "react-native";
-import COLORS from "../../constants/colors";
-import styles from "../../assets/styles/dashboard.styles";
+import React from 'react';
+import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { getColors } from '../../constants/colors';
+import { useThemeStore } from '../../store/themeStore';
+import { useDashboardStore } from '../../store/dashboardStore';
+import SafeScreen from '../../components/SafeScreen';
+import DashboardHome from '../(dashboard)/index';
+import DevicesScreen from '../(dashboard)/devices';
 
-import HomeContent from "../(dashboard)/index";
-import DevicesContent from "../(dashboard)/devices";
-
-const tabs = [
-  { key: "home", label: "Home" },
-  { key: "devices", label: "Devices" },
-];
-
-// Clean TabButton component to handle tab clicks and styles
-const TabButton = ({ label, active, onPress }) => (
+const TabButton = ({ label, active, onPress, COLORS }) => (
   <TouchableOpacity
+    style={[
+      styles.tabButton,
+      active && { backgroundColor: COLORS.primary },
+    ]}
     onPress={onPress}
-    style={[styles.subHeaderTab, active && styles.activeTab]}
-    activeOpacity={0.7}
   >
-    <Text style={[styles.subHeaderText, active && styles.activeTabText]}>
+    <Text
+      style={[
+        styles.tabButtonText,
+        { color: active ? '#FFFFFF' : COLORS.textTertiary },
+      ]}
+    >
       {label}
     </Text>
   </TouchableOpacity>
 );
 
-const DashboardPage = () => {
-  const [activeTab, setActiveTab] = useState("home");
+export default function DashboardPage() {
+  const { isDarkMode } = useThemeStore();
+  const COLORS = getColors(isDarkMode);
+  const { activeTab, setActiveTab } = useDashboardStore();
+
+  const tabs = [
+    { key: 'home', label: 'Overview' },
+    { key: 'devices', label: 'Devices' },
+  ];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={{ flexGrow: 1, paddingBottom: 30 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Welcome Section */}
-        <View style={styles.welcomeContainer}>
-          <Text style={styles.welcomeTitle}>Welcome back to Agrivision</Text>
-          <Text style={styles.welcomeSubtitle}>Your smart farming assistant.</Text>
-        </View>
-
-        {/* Sub Navigation Tabs */}
-        <View style={styles.subHeader}>
-          {tabs.map(({ key, label }) => (
-            <TabButton
-              key={key}
-              label={label}
-              active={activeTab === key}
-              onPress={() => setActiveTab(key)}
-            />
-          ))}
+    <SafeScreen>
+      <View style={[styles.container, { backgroundColor: COLORS.background }]}>
+        {/* Minimal Tab Switcher at the very top */}
+        <View style={styles.tabsWrapper}>
+          <View style={[styles.tabsContainer, { backgroundColor: COLORS.cardBackground }]}>
+            {tabs.map(({ key, label }) => (
+              <TabButton
+                key={key}
+                label={label}
+                active={activeTab === key}
+                onPress={() => setActiveTab(key)}
+                COLORS={COLORS}
+              />
+            ))}
+          </View>
         </View>
 
         {/* Content Area */}
-        <View style={styles.contentContainer}>
-          {activeTab === "home" && <HomeContent />}
-          {activeTab === "devices" && <DevicesContent />}
+        <View style={styles.content}>
+          {activeTab === 'home' ? <DashboardHome /> : <DevicesScreen />}
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+    </SafeScreen>
   );
-};
+}
 
-export default DashboardPage;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  tabsWrapper: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 10,
+    zIndex: 100,
+  },
+  tabsContainer: {
+    flexDirection: 'row',
+    padding: 6,
+    borderRadius: 18,
+    gap: 4,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  content: {
+    flex: 1,
+  },
+});

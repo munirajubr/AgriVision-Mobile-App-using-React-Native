@@ -1,21 +1,9 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import COLORS from '../constants/colors';
+import { getColors } from '../constants/colors';
+import { useThemeStore } from '../store/themeStore';
 
-/**
- * Props:
- * - deviceId: string
- * - record: normalized record object (may be null)
- * - menuVisible: boolean
- * - onOpenMenu: () => void
- * - onCloseMenu: () => void
- * - onHistory: () => void        // NEW - opens history modal in parent
- * - onDelete: () => void
- * - onDiagnose: () => void
- *
- * NOTE: card tap does nothing by default (no onPress) - menu/history is explicit.
- */
 export default function DeviceCard({
   deviceId,
   record,
@@ -26,24 +14,29 @@ export default function DeviceCard({
   onDelete = () => {},
   onDiagnose = () => {},
 }) {
+  const { isDarkMode } = useThemeStore();
+  const COLORS = getColors(isDarkMode);
+
   const temperature = record?.temperature != null ? `${record.temperature}°C` : '--';
   const soil = record?.soil_moisture != null ? `${record.soil_moisture}%` : '--';
   const humidity = record?.humidity != null ? `${record.humidity}%` : '--';
   const rawCaptured = record?.created_at ?? record?.predicted_at ?? record?._id ?? null;
   const capturedDisplay = formatRelative(rawCaptured);
+  
   const prediction =
     record?.prediction
       ? typeof record.prediction === 'object'
         ? record.prediction.class ?? JSON.stringify(record.prediction)
         : String(record.prediction)
-      : 'No prediction';
+      : 'Monitoring...';
 
   return (
-    <View style={styles.card}>
-
-      {/* header */}
+    <View style={[styles.card, { backgroundColor: COLORS.cardBackground }]}>
+      {/* Header with ID and Menu */}
       <View style={styles.header}>
-        <Text style={styles.title}>{`Device ${deviceId}`}</Text>
+        <View style={[styles.idBadge, { backgroundColor: `${COLORS.primary}10` }]}>
+          <Text style={[styles.idText, { color: COLORS.primary }]}>Device #{deviceId}</Text>
+        </View>
         <TouchableOpacity
           onPress={(e) => {
             e.stopPropagation && e.stopPropagation();
@@ -51,15 +44,13 @@ export default function DeviceCard({
           }}
           style={styles.menuBtn}
         >
-          <Text style={styles.menuText}>⋯</Text>
+          <Ionicons name="ellipsis-horizontal" size={20} color={COLORS.textTertiary} />
         </TouchableOpacity>
       </View>
 
-      {/* inline menu */}
+      {/* Inline Menu */}
       {menuVisible && (
-        <View style={styles.inlineMenu}>
-      
-
+        <View style={[styles.inlineMenu, { backgroundColor: COLORS.cardBackground, shadowColor: COLORS.shadow }]}>
           <TouchableOpacity
             style={styles.menuItem}
             onPress={(e) => {
@@ -68,9 +59,10 @@ export default function DeviceCard({
               onCloseMenu();
             }}
           >
-            <Text style={{ color: COLORS.destructive || 'red', fontWeight: '700' }}>Delete</Text>
+            <Ionicons name="trash-outline" size={18} color={COLORS.error} />
+            <Text style={[styles.deleteText, { color: COLORS.error }]}>Remove Device</Text>
           </TouchableOpacity>
-
+          <View style={[styles.menuDivider, { backgroundColor: COLORS.secondaryBackground }]} />
           <TouchableOpacity
             style={styles.menuItem}
             onPress={(e) => {
@@ -78,211 +70,123 @@ export default function DeviceCard({
               onCloseMenu();
             }}
           >
-            <Text style={{ color: COLORS.textSecondary || '#444' }}>Cancel</Text>
+            <Text style={[styles.cancelText, { color: COLORS.textTertiary }]}>Cancel</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      {/* image */}
-      <View style={styles.imageWrap}>
+      {/* Main Vision Display */}
+      <View style={[styles.imageWrap, { backgroundColor: COLORS.secondaryBackground }]}>
         {record?.image ? (
           <Image source={{ uri: record.image }} style={styles.image} resizeMode="cover" />
         ) : (
           <View style={[styles.image, styles.noImage]}>
-            <Text style={styles.noImageText}>No image</Text>
+            <Ionicons name="camera-outline" size={32} color={COLORS.textTertiary} />
+            <Text style={[styles.noImageText, { color: COLORS.textTertiary }]}>Waiting for vision data</Text>
           </View>
         )}
       </View>
 
-      {/* metrics row */}
+      {/* Analytics Row */}
       <View style={styles.metricsRow}>
-        <View style={styles.metricCol}>
-          <Text style={styles.metricLabel}>Temperature</Text>
-          <Text style={styles.metricValue}>{temperature}</Text>
+        <View style={[styles.metricBox, { backgroundColor: isDarkMode ? '#2C1717' : '#FFF5F5' }]}>
+          <Ionicons name="thermometer" size={16} color={COLORS.error} />
+          <Text style={[styles.metricLabel, { color: COLORS.textSecondary }]}>Temp</Text>
+          <Text style={[styles.metricValue, { color: COLORS.error }]}>{temperature}</Text>
         </View>
 
-        <View style={styles.metricCol}>
-          <Text style={styles.metricLabel}>Soil moisture</Text>
-          <Text style={styles.metricValue}>{soil}</Text>
+        <View style={[styles.metricBox, { backgroundColor: isDarkMode ? '#17212C' : '#EBF8FF' }]}>
+          <Ionicons name="water" size={16} color={COLORS.info} />
+          <Text style={[styles.metricLabel, { color: COLORS.textSecondary }]}>Soil</Text>
+          <Text style={[styles.metricValue, { color: COLORS.info }]}>{soil}</Text>
         </View>
 
-        <View style={styles.metricCol}>
-          <Text style={styles.metricLabel}>Humidity</Text>
-          <Text style={styles.metricValue}>{humidity}</Text>
+        <View style={[styles.metricBox, { backgroundColor: isDarkMode ? '#172C1E' : '#F0FFF4' }]}>
+          <Ionicons name="leaf" size={16} color={COLORS.primary} />
+          <Text style={[styles.metricLabel, { color: COLORS.textSecondary }]}>Health</Text>
+          <Text style={[styles.metricValue, { color: COLORS.primary }]}>{humidity}</Text>
         </View>
       </View>
 
-      {/* captured row */}
-      <View style={styles.capturedRow}>
-        <Text style={styles.capturedLabel}>Captured</Text>
-        <Text style={styles.capturedValue} numberOfLines={1}>{capturedDisplay}</Text>
-      </View>
+      <View style={[styles.divider, { backgroundColor: COLORS.secondaryBackground }]} />
 
-      <View style={styles.divider} />
-
-      {/* prediction area */}
+      {/* Prediction & Action */}
       <View style={styles.predictionArea}>
-        <View style={styles.predLeft}>
-          <Text style={styles.predTitle}>Prediction</Text>
-          <Text style={styles.predValueBig}>{prediction}</Text>
+        <View style={styles.predContent}>
+          <Text style={[styles.predTitle, { color: COLORS.textTertiary }]}>LATEST STATUS</Text>
+          <Text style={[styles.predValue, { color: COLORS.textPrimary }]} numberOfLines={1}>{prediction}</Text>
+          <Text style={[styles.timestamp, { color: COLORS.textTertiary }]}>{capturedDisplay}</Text>
         </View>
-
-        <View style={styles.predRight}>
-          <TouchableOpacity
-            onPress={(e) => {
-              e.stopPropagation && e.stopPropagation();
-              onDiagnose();
-            }}
-            style={styles.diagnoseBtn}
-            activeOpacity={0.9}
-          >
-            <Ionicons name="medical" size={16} color="#fff" />
-            <Text style={styles.diagnoseText}>Diagnose</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          onPress={onDiagnose}
+          style={[styles.diagnoseBtn, { backgroundColor: COLORS.primary }]}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.diagnoseText}>Analyze</Text>
+          <Ionicons name="chevron-forward" size={16} color="#fff" />
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-/* ---------- Helper: formatRelative (same as before) ---------- */
 function formatRelative(input) {
-  if (!input && input !== 0) return 'Unknown';
-
-  let date;
-  if (typeof input === 'number') {
-    date = input > 1e12 ? new Date(input) : new Date(input * 1000);
-  } else if (typeof input === 'string') {
-    const num = Number(input);
-    if (!Number.isNaN(num)) {
-      date = num > 1e12 ? new Date(num) : new Date(num * 1000);
-    } else {
-      date = new Date(input);
-      if (isNaN(date)) {
-        const oidMatch = /^([0-9a-fA-F]{8})/.exec(input);
-        if (oidMatch) {
-          try {
-            const ts = parseInt(oidMatch[1], 16);
-            date = new Date(ts * 1000);
-          } catch (e) {
-            return String(input);
-          }
-        } else {
-          return String(input);
-        }
-      }
-    }
-  } else {
-    try {
-      date = new Date(input);
-    } catch {
-      return 'Unknown';
-    }
-  }
-
-  if (!date || isNaN(date.getTime())) return 'Unknown';
-
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  if (diffMs < 0) return date.toLocaleString();
-
-  const sec = Math.floor(diffMs / 1000);
-  if (sec < 6) return 'just now';
-  if (sec < 60) return `${sec} sec${sec > 1 ? 's' : ''} ago`;
-
-  const min = Math.floor(sec / 60);
-  if (min < 60) return `${min} min${min > 1 ? 's' : ''} ago`;
-
-  const hr = Math.floor(min / 60);
-  if (hr < 24) {
-    const remMin = min % 60;
-    if (remMin === 0) return `${hr} hr${hr > 1 ? 's' : ''} ago`;
-    return `${hr} hr ${remMin} min ago`;
-  }
-
-  const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-  if (
-    date.getFullYear() === yesterday.getFullYear() &&
-    date.getMonth() === yesterday.getMonth() &&
-    date.getDate() === yesterday.getDate()
-  ) {
-    return 'Yesterday';
-  }
-
-  const opts = { weekday: 'short', day: 'numeric', month: 'short' };
-  if (date.getFullYear() !== now.getFullYear()) opts.year = 'numeric';
-  try {
-    return date.toLocaleDateString(undefined, opts);
-  } catch {
-    return date.toDateString();
-  }
+  if (!input) return 'Inactive';
+  const date = new Date(input);
+  if (isNaN(date.getTime())) return 'Recently';
+  const diffSec = Math.floor((new Date() - date) / 1000);
+  if (diffSec < 60) return 'Just now';
+  if (diffSec < 3600) return `${Math.floor(diffSec/60)}m ago`;
+  if (diffSec < 86400) return `${Math.floor(diffSec/3600)}h ago`;
+  return date.toLocaleDateString();
 }
 
-/* ---------- Styles ---------- */
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.cardBackground || '#fff',
-    marginVertical: 12,
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    shadowColor: '#00000050',
-    shadowOpacity: 0.08,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 6,
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 20,
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 },
+      android: { elevation: 2 }
+    }),
     position: 'relative',
   },
-
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-    paddingHorizontal: 2,
-  },
-  title: { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary || '#111' },
-  menuBtn: { padding: 6 },
-  menuText: { fontSize: 20, color: COLORS.textSecondary || '#444' },
-
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  idBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 },
+  idText: { fontSize: 13, fontWeight: '700' },
+  menuBtn: { padding: 4 },
   inlineMenu: {
     position: 'absolute',
-    right: 18,
-    top: 18,
-    backgroundColor: COLORS.cardBackground || '#fff',
-    borderRadius: 10,
-    elevation: 6,
-    paddingVertical: 6,
-    minWidth: 140,
-    zIndex: 999,
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
+    right: 16,
+    top: 50,
+    borderRadius: 18,
+    padding: 8,
+    width: 190,
+    zIndex: 100,
+    ...Platform.select({
+      ios: { shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 20 },
+      android: { elevation: 10 }
+    }),
   },
-  menuItem: { paddingVertical: 10, paddingHorizontal: 12 },
-
-  imageWrap: { width: '100%', height: 220, borderRadius: 12, overflow: 'hidden', marginBottom: 16, backgroundColor: '#f3f3f3' },
+  menuItem: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 10 },
+  deleteText: { fontWeight: '700', fontSize: 14 },
+  cancelText: { fontWeight: '600', fontSize: 14 },
+  menuDivider: { height: 1.5, marginVertical: 4 },
+  imageWrap: { width: '100%', height: 160, borderRadius: 18, overflow: 'hidden', marginBottom: 16 },
   image: { width: '100%', height: '100%' },
-  noImage: { alignItems: 'center', justifyContent: 'center' },
-  noImageText: { color: '#777' },
-
-  metricsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 14, paddingHorizontal: 4 },
-  metricCol: { alignItems: 'flex-start', width: '33%' },
-  metricLabel: { color: '#9aa0a6', fontSize: 14, marginBottom: 6 },
-  metricValue: { fontSize: 18, fontWeight: '800', color: '#111' },
-
-  capturedRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 2, marginBottom: 12 },
-  capturedLabel: { color: '#9aa0a6', fontSize: 12 },
-  capturedValue: { color: '#666', fontSize: 12, textAlign: 'right', maxWidth: '70%' },
-
-  divider: { height: 1, backgroundColor: '#eee', marginBottom: 12 },
-
+  noImage: { justifyContent: 'center', alignItems: 'center', gap: 8 },
+  noImageText: { fontSize: 13, fontWeight: '500' },
+  metricsRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  metricBox: { flex: 1, padding: 12, borderRadius: 18, alignItems: 'center', gap: 4 },
+  metricLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
+  metricValue: { fontSize: 15, fontWeight: '800' },
+  divider: { height: 1.5, marginBottom: 16 },
   predictionArea: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  predLeft: { flex: 1, paddingRight: 8 },
-  predTitle: { color: '#9aa0a6', fontSize: 14, marginBottom: 6 },
-  predValueBig: { fontSize: 18, fontWeight: '800', color: '#111' },
-
-  predRight: { width: 110, alignItems: 'flex-end' },
-  diagnoseBtn: { backgroundColor: COLORS.primary || '#037B21', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, flexDirection: 'row', alignItems: 'center' },
-  diagnoseText: { color: '#fff', fontWeight: '700', marginLeft: 8 },
+  predContent: { flex: 1 },
+  predTitle: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
+  predValue: { fontSize: 17, fontWeight: '700', marginTop: 2 },
+  timestamp: { fontSize: 12, marginTop: 2 },
+  diagnoseBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, flexDirection: 'row', alignItems: 'center', gap: 4 },
+  diagnoseText: { color: '#fff', fontWeight: '700', fontSize: 14 },
 });

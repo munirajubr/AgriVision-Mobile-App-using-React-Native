@@ -1,11 +1,12 @@
-import { View, Text, TouchableOpacity, Alert } from "react-native";
+import { Text, TouchableOpacity, Alert, StyleSheet } from "react-native";
 import { useAuthStore } from "../store/authStore";
-import styles from "../assets/styles/profile.styles";
-import { Ionicons } from "@expo/vector-icons";
-import COLORS from "../constants/colors";
+import { useThemeStore } from "../store/themeStore";
+import { getColors } from "../constants/colors";
 
 export default function LogoutButton() {
   const { logout } = useAuthStore();
+  const { isDarkMode } = useThemeStore();
+  const COLORS = getColors(isDarkMode);
 
   const confirmLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
@@ -16,7 +17,14 @@ export default function LogoutButton() {
 
   return (
     <TouchableOpacity onPress={confirmLogout}>
-      <Text style={styles.logoutText}>Logout</Text>
+      <Text style={[styles.logoutText, { color: COLORS.white }]}>Logout</Text>
     </TouchableOpacity>
   );
 }
+
+const styles = StyleSheet.create({
+  logoutText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});

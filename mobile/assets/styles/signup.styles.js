@@ -1,96 +1,83 @@
 // styles/signup.styles.js
-import { StyleSheet } from "react-native";
+import { StyleSheet, Dimensions } from "react-native";
 import COLORS from "../../constants/colors";
 
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     backgroundColor: COLORS.background,
-    padding: 20,
-    justifyContent: "center",
-  },
-  card: {
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: 16,
     padding: 24,
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 2,
-    borderColor: COLORS.border,
   },
-  header: {
-    alignItems: "center",
+  topSection: {
+    marginTop: 60,
     marginBottom: 32,
   },
   title: {
-    fontSize: 32,
-    fontWeight: "700",
-    fontFamily: "JetBrainsMono-Medium",
-    color: COLORS.primary,
-    marginBottom: 8,
+    fontSize: 34,
+    fontWeight: "800",
+    color: COLORS.black,
+    letterSpacing: -1,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 17,
     color: COLORS.textSecondary,
-    textAlign: "center",
+    marginTop: 8,
+    fontWeight: '500',
   },
-  formContainer: { marginBottom: 16 },
-  inputGroup: { marginBottom: 20 },
-  label: {
-    fontSize: 14,
-    marginBottom: 8,
-    color: COLORS.textPrimary,
-    fontWeight: "500",
+  formContainer: {
+    marginTop: 20,
+  },
+  inputGroup: {
+    marginBottom: 16,
+    backgroundColor: '#F2F2F7', 
+    borderRadius: 16, // Softer corners
+    paddingHorizontal: 16,
+    height: 60,
+    justifyContent: 'center',
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.inputBackground,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingHorizontal: 12,
   },
-  inputIcon: { marginRight: 10 },
   input: {
     flex: 1,
-    height: 48,
-    color: COLORS.textDark,
+    fontSize: 17,
+    color: COLORS.black,
+    paddingVertical: 0,
   },
-  eyeIcon: { padding: 8 },
+  inputIcon: {
+    marginRight: 10,
+  },
+  eyeIcon: {
+    padding: 4,
+  },
   button: {
     backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    height: 50,
+    borderRadius: 28, // Rounded pill-style button
+    height: 56,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 16,
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    marginTop: 32,
   },
   buttonText: {
     color: COLORS.white,
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 17,
+    fontWeight: "700",
   },
   footer: {
     flexDirection: "row",
     justifyContent: "center",
     marginTop: 24,
+    gap: 6,
   },
   footerText: {
     color: COLORS.textSecondary,
-    marginRight: 5,
+    fontSize: 15,
   },
   link: {
     color: COLORS.primary,
     fontWeight: "600",
+    fontSize: 15,
   },
 });
 

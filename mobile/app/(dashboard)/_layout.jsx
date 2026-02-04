@@ -7,7 +7,7 @@ export default function DashboardLayout() {
         headerShown: false,
       }}
     >
-      <Stack.Screen name="home" />
+      <Stack.Screen name="index" />
       <Stack.Screen name="devices" />
     </Stack>
   );

@@ -4,12 +4,17 @@ import {
   Text,
   TextInput,
   ScrollView,
-  Button,
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { getColors } from "../../constants/colors";
+import { useThemeStore } from "../../store/themeStore";
 
 const SetupAccountPage = () => {
+  const { isDarkMode } = useThemeStore();
+  const COLORS = getColors(isDarkMode);
+
   const [phone, setPhone] = useState("");
   const [farmLocation, setFarmLocation] = useState("");
   const [farmSize, setFarmSize] = useState("");
@@ -22,7 +27,6 @@ const SetupAccountPage = () => {
   const [cropsGrown, setCropsGrown] = useState("");
 
   const handleSave = () => {
-    // Prepare data object
     const userData = {
       phone,
       farmLocation,
@@ -33,140 +37,196 @@ const SetupAccountPage = () => {
       soilType,
       irrigationType,
       lastHarvest,
-      cropsGrown: cropsGrown.split(",").map((c) => c.trim()), // expecting comma separated crops list
+      cropsGrown: cropsGrown.split(",").map((c) => c.trim()),
     };
-
-    // TODO: Submit or save userData to backend or store
     console.log("User data to save:", userData);
   };
 
+  const InputField = ({ label, value, onChangeText, placeholder, keyboardType, icon }) => (
+    <View style={styles.inputGroup}>
+      <Text style={[styles.label, { color: COLORS.textSecondary }]}>{label}</Text>
+      <View style={[styles.inputContainer, { backgroundColor: COLORS.cardBackground }]}>
+        {icon && <Ionicons name={icon} size={20} color={COLORS.textTertiary} style={styles.inputIcon} />}
+        <TextInput
+          style={[styles.input, { color: COLORS.textPrimary }]}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={COLORS.textTertiary}
+          keyboardType={keyboardType || "default"}
+        />
+      </View>
+    </View>
+  );
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Setup Account Details</Text>
+    <View style={[styles.container, { backgroundColor: COLORS.background }]}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={[styles.title, { color: COLORS.textPrimary }]}>Setup Account Details</Text>
+        <Text style={[styles.subtitle, { color: COLORS.textSecondary }]}>
+          Complete your profile to get personalized farming insights
+        </Text>
 
-      <Text style={styles.label}>Phone</Text>
-      <TextInput
-        style={styles.input}
-        value={phone}
-        onChangeText={setPhone}
-        keyboardType="phone-pad"
-        placeholder="Enter phone number"
-      />
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: COLORS.textPrimary }]}>Contact Information</Text>
+          <InputField
+            label="Phone Number"
+            value={phone}
+            onChangeText={setPhone}
+            placeholder="Enter phone number"
+            keyboardType="phone-pad"
+            icon="call-outline"
+          />
+        </View>
 
-      <Text style={styles.label}>Farm Location</Text>
-      <TextInput
-        style={styles.input}
-        value={farmLocation}
-        onChangeText={setFarmLocation}
-        placeholder="Enter farm location"
-      />
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: COLORS.textPrimary }]}>Farm Details</Text>
+          <InputField
+            label="Farm Location"
+            value={farmLocation}
+            onChangeText={setFarmLocation}
+            placeholder="Enter farm location"
+            icon="location-outline"
+          />
+          <InputField
+            label="Farm Size"
+            value={farmSize}
+            onChangeText={setFarmSize}
+            placeholder="e.g., 5 acres"
+            icon="resize-outline"
+          />
+          <InputField
+            label="Farming Experience"
+            value={experience}
+            onChangeText={setExperience}
+            placeholder="e.g., 10 years"
+            icon="time-outline"
+          />
+          <InputField
+            label="Connected Devices"
+            value={connectedDevices}
+            onChangeText={setConnectedDevices}
+            placeholder="Number of devices"
+            keyboardType="number-pad"
+            icon="hardware-chip-outline"
+          />
+        </View>
 
-      <Text style={styles.label}>Farm Size</Text>
-      <TextInput
-        style={styles.input}
-        value={farmSize}
-        onChangeText={setFarmSize}
-        placeholder="Enter farm size"
-      />
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: COLORS.textPrimary }]}>Farming Information</Text>
+          <InputField
+            label="Farming Type"
+            value={farmingType}
+            onChangeText={setFarmingType}
+            placeholder="e.g., Organic, Traditional"
+            icon="leaf-outline"
+          />
+          <InputField
+            label="Soil Type"
+            value={soilType}
+            onChangeText={setSoilType}
+            placeholder="e.g., Clay, Loam"
+            icon="layers-outline"
+          />
+          <InputField
+            label="Irrigation Type"
+            value={irrigationType}
+            onChangeText={setIrrigationType}
+            placeholder="e.g., Drip, Sprinkler"
+            icon="water-outline"
+          />
+          <InputField
+            label="Last Harvest"
+            value={lastHarvest}
+            onChangeText={setLastHarvest}
+            placeholder="Date or season"
+            icon="calendar-outline"
+          />
+          <InputField
+            label="Crops Grown"
+            value={cropsGrown}
+            onChangeText={setCropsGrown}
+            placeholder="Wheat, Rice, Tomato (comma separated)"
+            icon="nutrition-outline"
+          />
+        </View>
 
-      <Text style={styles.label}>Experience</Text>
-      <TextInput
-        style={styles.input}
-        value={experience}
-        onChangeText={setExperience}
-        placeholder="Enter farming experience"
-      />
-
-      <Text style={styles.label}>Connected Devices</Text>
-      <TextInput
-        style={styles.input}
-        value={connectedDevices}
-        onChangeText={setConnectedDevices}
-        keyboardType="number-pad"
-        placeholder="Number of devices"
-      />
-
-      <Text style={styles.label}>Farming Type</Text>
-      <TextInput
-        style={styles.input}
-        value={farmingType}
-        onChangeText={setFarmingType}
-        placeholder="Type of farming"
-      />
-
-      <Text style={styles.label}>Soil Type</Text>
-      <TextInput
-        style={styles.input}
-        value={soilType}
-        onChangeText={setSoilType}
-        placeholder="Type of soil"
-      />
-
-      <Text style={styles.label}>Irrigation Type</Text>
-      <TextInput
-        style={styles.input}
-        value={irrigationType}
-        onChangeText={setIrrigationType}
-        placeholder="Type of irrigation"
-      />
-
-      <Text style={styles.label}>Last Harvest</Text>
-      <TextInput
-        style={styles.input}
-        value={lastHarvest}
-        onChangeText={setLastHarvest}
-        placeholder="Date or season of last harvest"
-      />
-
-      <Text style={styles.label}>Crops Grown</Text>
-      <TextInput
-        style={styles.input}
-        value={cropsGrown}
-        onChangeText={setCropsGrown}
-        placeholder="List crops separated by commas"
-      />
-
-      <TouchableOpacity style={styles.button} onPress={handleSave}>
-        <Text style={styles.buttonText}>Save Details</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: COLORS.primary }]}
+          onPress={handleSave}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.buttonText, { color: COLORS.white }]}>Save Details</Text>
+          <Ionicons name="checkmark-circle" size={22} color={COLORS.white} />
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 20,
     paddingBottom: 40,
   },
   title: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 20,
-    textAlign: "center",
+    fontSize: 28,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 15,
+    fontWeight: "400",
+    marginBottom: 32,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 16,
+  },
+  inputGroup: {
+    marginBottom: 16,
   },
   label: {
-    marginTop: 12,
-    marginBottom: 6,
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 8,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+  },
+  inputIcon: {
+    marginRight: 12,
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#cccccc",
-    borderRadius: 6,
-    padding: 10,
+    flex: 1,
+    paddingVertical: 14,
     fontSize: 16,
+    fontWeight: "400",
   },
   button: {
-    marginTop: 24,
-    backgroundColor: "#2196F3",
-    paddingVertical: 14,
-    borderRadius: 6,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginTop: 8,
+    gap: 8,
   },
   buttonText: {
-    color: "#fff",
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "600",
   },
 });
