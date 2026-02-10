@@ -53,10 +53,10 @@ npm start
 
 ## Contributors
 
-- Muniraju B R: https://github.com/munirajubr
-- Harshita Sakaray: https://github.com/harshita-sakaray26
-- Gunashree H M: https://github.com/gunashree-hm
-- Disha S Kashipati: https://github.com/Disha-S-Kashipati
+- [Muniraju B R](https://github.com/munirajubr)
+- [Harshita Sakaray](https://github.com/harshita-sakaray26)
+- [Gunashree H M](https://github.com/gunashree-hm)
+- [Disha S Kashipati](https://github.com/Disha-S-Kashipati)
 
 ## License
 This project is provided under the MIT License.
