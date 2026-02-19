@@ -160,8 +160,8 @@ export default function Signup() {
                 <ActivityIndicator color="#fff" />
               ) : (
                 <>
-                  <Text style={styles.buttonText}>Sign Up</Text>
-                  <Ionicons name="checkmark-circle" size={20} color="#fff" style={styles.btnIcon} />
+                  <Text style={[styles.buttonText, { color: isDarkMode ? COLORS.black : COLORS.white }]}>Sign Up</Text>
+                  <Ionicons name="checkmark-circle" size={20} color={isDarkMode ? COLORS.black : COLORS.white} style={styles.btnIcon} />
                 </>
               )}
             </TouchableOpacity>
@@ -277,13 +277,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginTop: 20,
-    ...Platform.select({
-      ios: { shadowColor: "#34C759", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 15 },
-      android: { elevation: 8 },
-    }),
   },
   buttonText: {
-    color: "#fff",
     fontSize: 18,
     fontWeight: "700",
   },

@@ -62,7 +62,7 @@ export default function MarketPage() {
                 onPress={() => setSelectedCategory(cat)}
                 style={[styles.catChip, { backgroundColor: selectedCategory === cat ? COLORS.primary : COLORS.cardBackground }]}
               >
-                <Text style={[styles.catText, { color: selectedCategory === cat ? '#FFF' : COLORS.textSecondary }]}>{cat}</Text>
+                <Text style={[styles.catText, { color: selectedCategory === cat ? (isDarkMode ? COLORS.black : COLORS.white) : COLORS.textSecondary }]}>{cat}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -99,22 +99,22 @@ export default function MarketPage() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { paddingHorizontal: 20, paddingTop: 10, marginBottom: 20 },
-  headerTitle: { fontSize: 28, fontWeight: '800' },
-  headerSubtitle: { fontSize: 14, marginTop: 2 },
+  headerTitle: { fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
+  headerSubtitle: { fontSize: 13, marginTop: 2, fontWeight: '500' },
   searchRow: { paddingHorizontal: 20, marginBottom: 20 },
-  searchBar: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 20, gap: 10, ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 }, android: { elevation: 2 } }) },
-  searchInput: { flex: 1, fontSize: 16, fontWeight: '500' },
+  searchBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, height: 56, borderRadius: 20, gap: 10 },
+  searchInput: { flex: 1, fontSize: 16, fontWeight: '600' },
   categoryScroll: { paddingHorizontal: 20, paddingBottom: 24, gap: 10 },
-  catChip: { paddingHorizontal: 22, paddingVertical: 12, borderRadius: 16, ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 4 }, android: { elevation: 1 } }) },
-  catText: { fontSize: 14, fontWeight: '700' },
+  catChip: { paddingHorizontal: 22, paddingVertical: 12, borderRadius: 16 },
+  catText: { fontSize: 14, fontWeight: '800' },
   scrollContent: { paddingHorizontal: 20 },
-  card: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18, borderRadius: 28, marginBottom: 14, ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10 }, android: { elevation: 2 } }) },
+  card: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18, borderRadius: 28, marginBottom: 14 },
   cardLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  iconBox: { width: 48, height: 48, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  itemName: { fontSize: 17, fontWeight: '700' },
-  itemSub: { fontSize: 12, fontWeight: '500' },
+  iconBox: { width: 52, height: 52, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  itemName: { fontSize: 17, fontWeight: '800' },
+  itemSub: { fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.3 },
   cardRight: { alignItems: 'flex-end' },
-  itemPrice: { fontSize: 18, fontWeight: '800' },
-  badge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, marginTop: 6 },
+  itemPrice: { fontSize: 18, fontWeight: '900' },
+  badge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10, marginTop: 6 },
   badgeText: { fontSize: 11, fontWeight: '800' }
 });

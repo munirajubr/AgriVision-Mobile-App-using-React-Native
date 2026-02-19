@@ -2,35 +2,42 @@
 // Light and Dark mode support with agriculture-friendly green accent
 
 const LIGHT_COLORS = {
-  // Primary colors - Agriculture green
-  primary: "#34C759", // iOS green
-  primaryLight: "#4CD964",
-  primaryDark: "#248A3D",
+  // Primary colors - Dark and clean
+  primary: "#000000",
+  primaryLight: "#333333",
+  primaryDark: "#000000",
   
   // Backgrounds
-  background: "#F2F2F7", // iOS light background
-  cardBackground: "#FFFFFF",
-  secondaryBackground: "#E5E5EA",
+  background: "#FFFFFF",
+  cardBackground: "#F8F9FB",
+  secondaryBackground: "#F2F2F7",
   
   // Text colors
-  textPrimary: "#000000",
-  textSecondary: "#3C3C43", // iOS secondary text
-  textTertiary: "#8E8E93", // iOS tertiary text
+  textPrimary: "#1A1A1A",
+  textSecondary: "#666666",
+  textTertiary: "#999999",
   placeholderText: "#C7C7CC",
   
   // Borders and separators
-  border: "#E5E5EA",
-  separator: "#C6C6C8",
+  border: "#EEEEEE",
+  separator: "#F2F2F7",
   
   // Status colors
-  error: "#FF3B30", // iOS red
-  warning: "#FF9500", // iOS orange
-  success: "#34C759", // iOS green
-  info: "#007AFF", // iOS blue
+  error: "#FF3B30",
+  warning: "#FFCC00",
+  success: "#34C759",
+  info: "#007AFF",
   
+  // Pastel backgrounds for categories
+  pastelGreen: "#E6F7ED",
+  pastelPurple: "#F4EBFF",
+  pastelBlue: "#EBF5FF",
+  pastelOrange: "#FFF7E6",
+  pastelPink: "#FFF0F5",
+
   // UI elements
   inactive: "#C7C7CC",
-  shadow: "rgba(0, 0, 0, 0.1)",
+  shadow: "rgba(0, 0, 0, 0.05)",
   overlay: "rgba(0, 0, 0, 0.4)",
   
   // Fixed colors
@@ -39,35 +46,42 @@ const LIGHT_COLORS = {
 };
 
 const DARK_COLORS = {
-  // Primary colors - Agriculture green (adjusted for dark mode)
-  primary: "#32D74B", // iOS green dark mode
-  primaryLight: "#4CD964",
-  primaryDark: "#248A3D",
+  // Primary colors - White and clean for dark mode
+  primary: "#FFFFFF",
+  primaryLight: "#EEEEEE",
+  primaryDark: "#FFFFFF",
   
   // Backgrounds
-  background: "#000000", // iOS dark background
-  cardBackground: "#1C1C1E", // iOS elevated dark
-  secondaryBackground: "#2C2C2E",
+  background: "#000000",
+  cardBackground: "#111111",
+  secondaryBackground: "#1A1A1A",
   
   // Text colors
   textPrimary: "#FFFFFF",
-  textSecondary: "#EBEBF5", // iOS secondary text dark
-  textTertiary: "#8E8E93", // iOS tertiary text dark
+  textSecondary: "#AAAAAA",
+  textTertiary: "#666666",
   placeholderText: "#48484A",
   
   // Borders and separators
-  border: "#38383A",
-  separator: "#48484A",
+  border: "#222222",
+  separator: "#1A1A1A",
   
   // Status colors
-  error: "#FF453A", // iOS red dark
-  warning: "#FF9F0A", // iOS orange dark
-  success: "#32D74B", // iOS green dark
-  info: "#0A84FF", // iOS blue dark
+  error: "#FF453A",
+  warning: "#FFD60A",
+  success: "#32D74B",
+  info: "#0A84FF",
   
+  // Darker pastel backgrounds for dark mode
+  pastelGreen: "#0F2618",
+  pastelPurple: "#1B0F26",
+  pastelBlue: "#0F1B26",
+  pastelOrange: "#261B0F",
+  pastelPink: "#260F1B",
+
   // UI elements
-  inactive: "#48484A",
-  shadow: "rgba(0, 0, 0, 0.3)",
+  inactive: "#3A3A3C",
+  shadow: "rgba(0, 0, 0, 0.5)",
   overlay: "rgba(0, 0, 0, 0.6)",
   
   // Fixed colors

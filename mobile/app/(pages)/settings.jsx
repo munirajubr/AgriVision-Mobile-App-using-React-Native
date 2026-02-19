@@ -28,17 +28,17 @@ const SettingsPage = () => {
       ]
     },
     {
-      title: 'Support',
+      title: 'Support & Interaction',
       items: [
         { icon: 'help-circle', label: 'Help Center', type: 'nav', route: '/(pages)/helpsupport', color: COLORS.info },
-        { icon: 'share-social', label: 'Invite Friends', type: 'action', color: COLORS.primary },
+        { icon: 'share-social', label: 'Invite Friends', type: 'action', action: () => Alert.alert("Invite Friends", "[Coming Soon]"), color: COLORS.primary },
       ]
     },
     {
       title: 'About',
       items: [
+        { icon: 'shield-checkmark', label: 'Privacy Policy', type: 'nav', route: '/(pages)/privacypolicy', color: COLORS.primary },
         { icon: 'information-circle', label: 'App Version', type: 'info', value: '2.0.0', color: COLORS.textTertiary },
-        { icon: 'shield-checkmark', label: 'Privacy Policy', type: 'nav', color: COLORS.textTertiary },
       ]
     }
   ];
@@ -52,7 +52,7 @@ const SettingsPage = () => {
           {sections.map((section, sIdx) => (
             <View key={sIdx} style={styles.section}>
               <Text style={[styles.sectionTitle, { color: COLORS.textTertiary }]}>{section.title}</Text>
-              <View style={[styles.sectionContent, { backgroundColor: COLORS.cardBackground }]}>
+              <View style={[styles.sectionContent, { backgroundColor: COLORS.cardBackground, borderWidth: 0 }]}>
                 {section.items.map((item, iIdx) => (
                   <View key={iIdx}>
                     <TouchableOpacity 
@@ -78,9 +78,6 @@ const SettingsPage = () => {
                         <Ionicons name="chevron-forward" size={18} color={COLORS.textTertiary} />
                       )}
                     </TouchableOpacity>
-                    {iIdx !== section.items.length - 1 && (
-                      <View style={[styles.divider, { backgroundColor: COLORS.secondaryBackground }]} />
-                    )}
                   </View>
                 ))}
               </View>
@@ -103,12 +100,11 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 20 },
   section: { marginBottom: 25 },
   sectionTitle: { fontSize: 13, fontWeight: '600', textTransform: 'uppercase', marginLeft: 16, marginBottom: 10, letterSpacing: 1 },
-  sectionContent: { borderRadius: 24, overflow: 'hidden' },
+  sectionContent: { borderRadius: 24, overflow: 'hidden', borderWidth: 0 },
   item: { flexDirection: 'row', alignItems: 'center', padding: 18 },
   iconBox: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
   label: { flex: 1, fontSize: 16, fontWeight: '500' },
   infoVal: { fontSize: 15, fontWeight: '400' },
-  divider: { height: 1, marginLeft: 70 },
   footer: { alignItems: 'center', marginTop: 20 },
   footerText: { fontSize: 12, opacity: 0.5, marginBottom: 5 }
 });

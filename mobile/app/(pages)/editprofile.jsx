@@ -26,7 +26,7 @@ import PageHeader from '../../components/PageHeader';
 const InputField = ({ label, value, field, placeholder, icon, keyboardType = 'default', COLORS, onChange }) => (
   <View style={styles.inputGroup}>
     <Text style={[styles.label, { color: COLORS.textTertiary }]}>{label}</Text>
-    <View style={[styles.inputWrapper, { backgroundColor: COLORS.cardBackground }]}>
+    <View style={[styles.inputWrapper, { backgroundColor: COLORS.cardBackground, borderWidth: 0 }]}>
       <Ionicons name={icon} size={20} color={COLORS.primary} style={styles.inputIcon} />
       <TextInput
         style={[styles.input, { color: COLORS.textPrimary }]}
@@ -141,7 +141,7 @@ export default function EditProfile() {
             title="Edit Profile" 
             rightComponent={
               <TouchableOpacity onPress={handleSave} disabled={isLoading} style={[styles.saveBtn, { backgroundColor: COLORS.primary }]}>
-                {isLoading ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.saveBtnText}>Save</Text>}
+                {isLoading ? <ActivityIndicator color={isDarkMode ? COLORS.black : COLORS.white} size="small" /> : <Text style={[styles.saveBtnText, { color: isDarkMode ? COLORS.black : COLORS.white }]}>Save</Text>}
               </TouchableOpacity>
             }
           />
@@ -154,8 +154,8 @@ export default function EditProfile() {
           >
             <View style={styles.avatarSection}>
               <TouchableOpacity onPress={pickImage} style={[styles.avatarBox, { backgroundColor: COLORS.primary }]}>
-                {profileImage ? <Image source={{ uri: profileImage }} style={styles.avatarImage} /> : <Text style={styles.avatarInitial}>{(formData.fullName || 'U').charAt(0).toUpperCase()}</Text>}
-                <View style={[styles.cameraBtn, { backgroundColor: COLORS.cardBackground }]}>
+                {profileImage ? <Image source={{ uri: profileImage }} style={styles.avatarImage} /> : <Text style={[styles.avatarInitial, { color: isDarkMode ? COLORS.black : COLORS.white }]}>{(formData.fullName || 'U').charAt(0).toUpperCase()}</Text>}
+                <View style={[styles.cameraBtn, { backgroundColor: COLORS.cardBackground, borderWidth: 0 }]}>
                   <Ionicons name="camera" size={20} color={COLORS.primary} />
                 </View>
               </TouchableOpacity>
@@ -179,7 +179,7 @@ export default function EditProfile() {
                 <Text style={[styles.label, { color: COLORS.textTertiary }]}>Farm Location</Text>
                 {isSearchingLocation && <ActivityIndicator size="small" color={COLORS.primary} />}
               </View>
-              <View style={[styles.inputWrapper, { backgroundColor: COLORS.cardBackground, zIndex: 101 }]}>
+              <View style={[styles.inputWrapper, { backgroundColor: COLORS.cardBackground, zIndex: 101, borderWidth: 0 }]}>
                 <Ionicons name="location-outline" size={20} color={COLORS.primary} style={styles.inputIcon} />
                 <TextInput
                   style={[styles.input, { color: COLORS.textPrimary }]}
@@ -220,35 +220,30 @@ export default function EditProfile() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   saveBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 },
-  saveBtnText: { color: '#FFF', fontWeight: '700', fontSize: 14 },
+  saveBtnText: { fontWeight: '700', fontSize: 14 },
   scrollContent: { padding: 20 },
   avatarSection: { alignItems: 'center', marginBottom: 30 },
   avatarBox: { width: 120, height: 120, borderRadius: 60, alignItems: 'center', justifyContent: 'center', position: 'relative' },
   avatarInitial: { color: '#FFF', fontSize: 48, fontWeight: '700' },
   avatarImage: { width: 120, height: 120, borderRadius: 60 },
-  cameraBtn: { position: 'absolute', bottom: 0, right: 0, width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 5, elevation: 4 },
+  cameraBtn: { position: 'absolute', bottom: 0, right: 0, width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   changeText: { marginTop: 12, fontSize: 13, fontWeight: '700' },
   sectionHeader: { marginTop: 10, marginBottom: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: '700' },
+  sectionTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.3 },
   inputGroup: { marginBottom: 20 },
   labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  label: { fontSize: 13, fontWeight: '600', marginLeft: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
-  inputWrapper: { flexDirection: 'row', alignItems: 'center', borderRadius: 18, paddingHorizontal: 16, height: 56 },
+  label: { fontSize: 11, fontWeight: '800', marginLeft: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
+  inputWrapper: { flexDirection: 'row', alignItems: 'center', borderRadius: 18, paddingHorizontal: 16, height: 58 },
   inputIcon: { marginRight: 12 },
-  input: { flex: 1, fontSize: 16, fontWeight: '500' },
+  input: { flex: 1, fontSize: 16, fontWeight: '600' },
   suggestionBox: { 
     marginTop: 0, 
     borderRadius: 18, 
-    borderWidth: 1, 
     overflow: 'hidden',
     position: 'absolute',
     top: 85,
     left: 0,
     right: 0,
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 15 },
-      android: { elevation: 15 },
-    }),
   },
   suggestionItem: { flexDirection: 'row', alignItems: 'center', padding: 16 },
   suggestionText: { fontSize: 14, fontWeight: '500' },

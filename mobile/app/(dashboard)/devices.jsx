@@ -22,6 +22,7 @@ import { useThemeStore } from '../../store/themeStore';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
 import DeviceCard from '../../components/DeviceCard';
+import { scheduleNotification } from '../../utils/notifications';
 
 const DEVICES_API = 'https://ml-flask-model.onrender.com/api/devices';
 const ADD_API = 'https://agrivision-mobile-app-using-react-native.onrender.com/api/devices/add';
@@ -101,6 +102,31 @@ export default function DevicesScreen() {
       const resp = await axios.post(DEVICES_API, { username }, { timeout: 15000 });
       const normalized = normalizeDevicesResponse(resp?.data);
       setDevicesMap(normalized);
+
+      // Check for issues and notify
+      Object.entries(normalized).forEach(([id, records]) => {
+        if (records.length > 0) {
+          const last = records[0];
+          const pred = last.prediction;
+          const diseaseStr = typeof pred === 'object' ? pred.class : pred;
+          
+          if (diseaseStr && diseaseStr.toLowerCase() !== 'healthy' && diseaseStr !== 'Monitoring...') {
+            scheduleNotification(
+              "Device Alert",
+              `Issue detected on Sensor #${id}: ${diseaseStr}`
+            );
+          }
+          
+          // Check soil moisture
+          if (last.soil_moisture !== null && (last.soil_moisture < 20 || last.soil_moisture > 90)) {
+            scheduleNotification(
+              "Soil Alert",
+              `Critical moisture on Sensor #${id}: ${last.soil_moisture}%`
+            );
+          }
+        }
+      });
+
       await AsyncStorage.setItem(storageKey, JSON.stringify({ username, devices: normalized }));
     } catch {} finally { setRefreshing(false); setLoading(false); }
   }, [username]);

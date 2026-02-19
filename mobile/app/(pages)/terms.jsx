@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
   heroDate: { fontSize: 11, fontWeight: '800', letterSpacing: 1.5, marginBottom: 8 },
   heroTitle: { fontSize: 32, fontWeight: '800', marginBottom: 12 },
   heroSub: { fontSize: 16, lineHeight: 24, fontWeight: '500' },
-  card: { padding: 24, borderRadius: 28, marginBottom: 16, ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 10 }, android: { elevation: 1 } }) },
+  card: { padding: 24, borderRadius: 28, marginBottom: 16, borderWidth: 1, borderColor: '#F0F0F0' },
   cardTitle: { fontSize: 18, fontWeight: '700', marginBottom: 12 },
   cardContent: { fontSize: 15, lineHeight: 24, fontWeight: '400' }
 });

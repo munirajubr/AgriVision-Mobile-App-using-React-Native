@@ -31,7 +31,7 @@ export default function DeviceCard({
       : 'Monitoring...';
 
   return (
-    <View style={[styles.card, { backgroundColor: COLORS.cardBackground }]}>
+    <View style={[styles.card, { backgroundColor: COLORS.cardBackground, borderWidth: 0 }]}>
       {/* Header with ID and Menu */}
       <View style={styles.header}>
         <View style={[styles.idBadge, { backgroundColor: `${COLORS.primary}10` }]}>
@@ -146,10 +146,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 16,
     marginBottom: 20,
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 },
-      android: { elevation: 2 }
-    }),
+    borderWidth: 1,
     position: 'relative',
   },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
@@ -164,10 +161,8 @@ const styles = StyleSheet.create({
     padding: 8,
     width: 190,
     zIndex: 100,
-    ...Platform.select({
-      ios: { shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 20 },
-      android: { elevation: 10 }
-    }),
+    borderWidth: 1,
+    borderColor: '#EEEEEE',
   },
   menuItem: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 10 },
   deleteText: { fontWeight: '700', fontSize: 14 },

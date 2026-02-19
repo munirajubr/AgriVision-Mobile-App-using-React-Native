@@ -125,8 +125,8 @@ export default function Login() {
                 <ActivityIndicator color="#fff" />
               ) : (
                 <>
-                  <Text style={styles.buttonText}>Sign In</Text>
-                  <Ionicons name="arrow-forward" size={20} color="#fff" style={styles.btnArrow} />
+                  <Text style={[styles.buttonText, { color: isDarkMode ? COLORS.black : COLORS.white }]}>Sign In</Text>
+                  <Ionicons name="arrow-forward" size={20} color={isDarkMode ? COLORS.black : COLORS.white} style={styles.btnArrow} />
                 </>
               )}
             </TouchableOpacity>
@@ -177,10 +177,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,
-    ...Platform.select({
-      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20 },
-      android: { elevation: 5 },
-    }),
+    borderWidth: 1,
+    borderColor: '#EEEEEE',
   },
   title: {
     fontSize: 32,
@@ -213,10 +211,8 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 20,
     paddingHorizontal: 16,
-    ...Platform.select({
-      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 },
-      android: { elevation: 2 },
-    }),
+    borderWidth: 1,
+    borderColor: '#EEEEEE',
   },
   inputIcon: {
     marginRight: 12,
@@ -236,13 +232,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginTop: 20,
-    ...Platform.select({
-      ios: { shadowColor: "#34C759", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 15 },
-      android: { elevation: 8 },
-    }),
   },
   buttonText: {
-    color: "#fff",
     fontSize: 18,
     fontWeight: "700",
   },

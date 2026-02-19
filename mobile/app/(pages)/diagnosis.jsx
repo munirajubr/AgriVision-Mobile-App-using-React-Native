@@ -17,6 +17,7 @@ import { getColors } from "../../constants/colors";
 import { useThemeStore } from "../../store/themeStore";
 import SafeScreen from "../../components/SafeScreen";
 import PageHeader from "../../components/PageHeader";
+import { scheduleNotification } from "../../utils/notifications";
 
 const BASE_URL = "https://eggplant-disease-detection-model.onrender.com"; 
 
@@ -69,6 +70,12 @@ export default function PlantAnalysisScreen() {
         confidence: Math.round((data.prediction?.confidence || 0) * 100),
         recommendations: data.disease_info?.recommendations || ["Regular monitoring is advised."]
       });
+      
+      // Trigger notification
+      scheduleNotification(
+        "Diagnosis Complete",
+        `Plant condition identified as: ${data.prediction?.class || "Healthy"}`
+      );
     } catch (err) { Alert.alert("Fail", "Server is busy. Please try again later."); } finally { setIsAnalyzing(false); }
   };
 
@@ -113,13 +120,13 @@ export default function PlantAnalysisScreen() {
             >
               {isAnalyzing ? (
                 <View style={styles.loadingRow}>
-                  <ActivityIndicator color="#FFF" />
-                  <Text style={styles.actionText}>Scanning Tissues...</Text>
+                  <ActivityIndicator color={isDarkMode ? COLORS.black : COLORS.white} />
+                  <Text style={[styles.actionText, { color: isDarkMode ? COLORS.black : COLORS.white }]}>Scanning Tissues...</Text>
                 </View>
               ) : (
                 <View style={styles.loadingRow}>
-                  <Ionicons name="sparkles" size={24} color="#FFF" />
-                  <Text style={styles.actionText}>Run AI Diagnosis</Text>
+                  <Ionicons name="sparkles" size={24} color={isDarkMode ? COLORS.black : COLORS.white} />
+                  <Text style={[styles.actionText, { color: isDarkMode ? COLORS.black : COLORS.white }]}>Run AI Diagnosis</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -148,7 +155,7 @@ export default function PlantAnalysisScreen() {
               {analysisResult.recommendations.map((rec, i) => (
                 <View key={i} style={[styles.recCard, { backgroundColor: COLORS.cardBackground }]}>
                    <View style={[styles.stepDot, { backgroundColor: COLORS.primary }]}>
-                     <Text style={styles.stepNum}>{i + 1}</Text>
+                     <Text style={[styles.stepNum, { color: isDarkMode ? COLORS.black : COLORS.white }]}>{i + 1}</Text>
                    </View>
                    <Text style={[styles.recContent, { color: COLORS.textSecondary }]}>{rec}</Text>
                 </View>
@@ -158,8 +165,8 @@ export default function PlantAnalysisScreen() {
                 style={[styles.pathologyBtn, { backgroundColor: COLORS.primary }]} 
                 onPress={() => router.push(`/(pages)/diseasediagnosis?prediction=${encodeURIComponent(analysisResult.class)}`)}
               >
-                <Text style={styles.pathologyBtnText}>View Full Pathology</Text>
-                <Ionicons name="book-outline" size={18} color="#FFF" />
+                <Text style={[styles.pathologyBtnText, { color: isDarkMode ? COLORS.black : COLORS.white }]}>View Full Pathology</Text>
+                <Ionicons name="book-outline" size={18} color={isDarkMode ? COLORS.black : COLORS.white} />
               </TouchableOpacity>
 
               <TouchableOpacity 
@@ -190,9 +197,9 @@ const styles = StyleSheet.create({
   uploadOptions: { flexDirection: 'row', gap: 16, padding: 20 },
   uploadBox: { flex: 1, height: 140, borderRadius: 24, alignItems: 'center', justifyContent: 'center', gap: 12 },
   uploadText: { fontSize: 15, fontWeight: '700' },
-  mainActionBtn: { height: 68, borderRadius: 24, alignItems: 'center', justifyContent: 'center', ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 15 }, android: { elevation: 4 } }) },
+  mainActionBtn: { height: 68, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  actionText: { color: '#FFF', fontSize: 18, fontWeight: '800' },
+  actionText: { fontSize: 18, fontWeight: '800' },
   resultsWrapper: { gap: 20 },
   resultHeaderCard: { padding: 24, borderRadius: 28 },
   resultTypeRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 },
@@ -207,10 +214,10 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 19, fontWeight: '800', marginTop: 10, marginLeft: 4 },
   recCard: { padding: 18, borderRadius: 24, flexDirection: 'row', gap: 16, alignItems: 'flex-start' },
   stepDot: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  stepNum: { color: '#FFF', fontSize: 13, fontWeight: '800' },
+  stepNum: { fontSize: 13, fontWeight: '800' },
   recContent: { flex: 1, fontSize: 15, lineHeight: 22, fontWeight: '500' },
   pathologyBtn: { height: 60, borderRadius: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 10 },
-  pathologyBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
+  pathologyBtnText: { fontSize: 16, fontWeight: '800' },
   resetBtn: { height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginTop: 10 },
   resetText: { fontSize: 16, fontWeight: '700' }
 });

@@ -32,7 +32,7 @@ export default function ProfileHeader({ onEditProfile }) {
       {user.farmName && <Text style={[styles.userFarmName, { color: COLORS.textSecondary }]}>{user.farmName}</Text>}
 
       <TouchableOpacity 
-        style={[styles.editProfileButton, { backgroundColor: `${COLORS.primary}15`, borderColor: COLORS.primary }]} 
+        style={[styles.editProfileButton, { backgroundColor: `${COLORS.primary}15` }]} 
         onPress={onEditProfile}
       >
         <Ionicons name="create-outline" size={18} color={COLORS.primary} />
@@ -91,7 +91,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 20,
     gap: 6,
-    borderWidth: 1,
   },
   editProfileText: {
     fontSize: 15,

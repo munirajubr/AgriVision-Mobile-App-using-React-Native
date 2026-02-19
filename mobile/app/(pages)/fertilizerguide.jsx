@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
   hero: { marginBottom: 32, paddingLeft: 4 },
   heroTitle: { fontSize: 32, fontWeight: '800', marginBottom: 8 },
   heroSub: { fontSize: 16, fontWeight: '500' },
-  card: { flexDirection: 'row', padding: 20, borderRadius: 28, marginBottom: 16, gap: 20, ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 10 }, android: { elevation: 1 } }) },
+  card: { flexDirection: 'row', padding: 20, borderRadius: 28, marginBottom: 16, gap: 20 },
   iconBox: { width: 64, height: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   textSide: { flex: 1, justifyContent: 'center' },
   cardTitle: { fontSize: 18, fontWeight: '800', marginBottom: 6 },

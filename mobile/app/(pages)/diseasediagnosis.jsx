@@ -122,11 +122,11 @@ const DiseaseDiagnosisPage = () => {
 
               {/* Status Bar Row */}
               <View style={styles.metricsRow}>
-                <View style={[styles.metricCard, { backgroundColor: COLORS.cardBackground }]}>
+                <View style={[styles.metricCard, { backgroundColor: COLORS.cardBackground, borderWidth: 0 }]}>
                   <Text style={[styles.metricVal, { color: COLORS.error }]}>{diseaseInfo?.['Severity Level'] || 'Low'}</Text>
                   <Text style={[styles.metricLab, { color: COLORS.textTertiary }]}>Severity</Text>
                 </View>
-                <View style={[styles.metricCard, { backgroundColor: COLORS.cardBackground }]}>
+                <View style={[styles.metricCard, { backgroundColor: COLORS.cardBackground, borderWidth: 0 }]}>
                   <Text style={[styles.metricVal, { color: COLORS.primary }]}>{diseaseInfo?.['Days to Recovery'] || 'N/A'}</Text>
                   <Text style={[styles.metricLab, { color: COLORS.textTertiary }]}>Est. Recovery</Text>
                 </View>
@@ -177,7 +177,7 @@ const DiseaseDiagnosisPage = () => {
                 style={[styles.finishBtn, { backgroundColor: COLORS.primary }]} 
                 onPress={() => router.back()}
               >
-                <Text style={styles.finishBtnText}>Acknowledge & Save</Text>
+                <Text style={[styles.finishBtnText, { color: isDarkMode ? COLORS.black : COLORS.white }]}>Acknowledge & Save</Text>
               </TouchableOpacity>
             </>
           )}
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
   sourceText: { fontSize: 12, fontWeight: '700' },
 
   metricsRow: { flexDirection: 'row', gap: 16, marginBottom: 24 },
-  metricCard: { flex: 1, padding: 20, borderRadius: 24, alignItems: 'center', ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 10 }, android: { elevation: 1 } }) },
+  metricCard: { flex: 1, padding: 20, borderRadius: 24, alignItems: 'center' },
   metricVal: { fontSize: 18, fontWeight: '800', marginBottom: 4 },
   metricLab: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
 
@@ -221,8 +221,8 @@ const styles = StyleSheet.create({
   errorBox: { alignItems: 'center', padding: 40, gap: 12 },
   errorText: { textAlign: 'center', fontSize: 14, fontWeight: '500', lineHeight: 20 },
   
-  finishBtn: { height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginTop: 40, ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 15 }, android: { elevation: 4 } }) },
-  finishBtnText: { color: '#FFF', fontSize: 17, fontWeight: '800' }
+  finishBtn: { height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginTop: 40 },
+  finishBtnText: { fontSize: 17, fontWeight: '800' }
 });
 
 export default DiseaseDiagnosisPage;

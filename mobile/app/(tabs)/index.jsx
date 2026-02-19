@@ -7,7 +7,7 @@ import SafeScreen from '../../components/SafeScreen';
 import DashboardHome from '../(dashboard)/index';
 import DevicesScreen from '../(dashboard)/devices';
 
-const TabButton = ({ label, active, onPress, COLORS }) => (
+const TabButton = ({ label, active, onPress, COLORS, isDarkMode }) => (
   <TouchableOpacity
     style={[
       styles.tabButton,
@@ -18,7 +18,7 @@ const TabButton = ({ label, active, onPress, COLORS }) => (
     <Text
       style={[
         styles.tabButtonText,
-        { color: active ? '#FFFFFF' : COLORS.textTertiary },
+        { color: active ? (isDarkMode ? '#000000' : '#FFFFFF') : COLORS.textTertiary },
       ]}
     >
       {label}
@@ -49,6 +49,7 @@ export default function DashboardPage() {
                 active={activeTab === key}
                 onPress={() => setActiveTab(key)}
                 COLORS={COLORS}
+                isDarkMode={isDarkMode}
               />
             ))}
           </View>

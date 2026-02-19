@@ -18,10 +18,10 @@ import SafeScreen from "../../components/SafeScreen";
 import PageHeader from "../../components/PageHeader";
 
 // Simplified Input Component
-const SimpleInput = ({ label, value, onChangeText, placeholder, icon, unit, COLORS }) => (
+const SimpleInput = ({ label, value, onChangeText, placeholder, icon, unit, COLORS, isDarkMode }) => (
   <View style={styles.inputContainer}>
     <Text style={[styles.inputLabel, { color: COLORS.textTertiary }]}>{label}</Text>
-    <View style={[styles.inputWrapper, { backgroundColor: COLORS.cardBackground, borderColor: COLORS.border }]}>
+    <View style={[styles.inputWrapper, { backgroundColor: COLORS.cardBackground, borderWidth: 0 }]}>
       <Ionicons name={icon} size={20} color={COLORS.primary} style={styles.inputIcon} />
       <TextInput
         style={[styles.input, { color: COLORS.textPrimary }]}
@@ -79,25 +79,25 @@ export default function NPKUploadPage() {
             <View style={styles.formSection}>
               <Text style={[styles.sectionHeader, { color: COLORS.primary }]}>SOIL NUTRIENTS</Text>
               <View style={styles.row}>
-                <SimpleInput label="Nitrogen (N)" value={formData.N} onChangeText={(v) => updateField("N", v)} placeholder="0" icon="leaf-outline" COLORS={COLORS} />
-                <SimpleInput label="Phosphorus (P)" value={formData.P} onChangeText={(v) => updateField("P", v)} placeholder="0" icon="flask-outline" COLORS={COLORS} />
+                <SimpleInput label="Nitrogen (N)" value={formData.N} onChangeText={(v) => updateField("N", v)} placeholder="0" icon="leaf-outline" COLORS={COLORS} isDarkMode={isDarkMode} />
+                <SimpleInput label="Phosphorus (P)" value={formData.P} onChangeText={(v) => updateField("P", v)} placeholder="0" icon="flask-outline" COLORS={COLORS} isDarkMode={isDarkMode} />
               </View>
               <View style={styles.row}>
-                <SimpleInput label="Potassium (K)" value={formData.K} onChangeText={(v) => updateField("K", v)} placeholder="0" icon="prism-outline" COLORS={COLORS} />
-                <SimpleInput label="Soil pH" value={formData.ph} onChangeText={(v) => updateField("ph", v)} placeholder="7.0" icon="water-outline" COLORS={COLORS} />
+                <SimpleInput label="Potassium (K)" value={formData.K} onChangeText={(v) => updateField("K", v)} placeholder="0" icon="prism-outline" COLORS={COLORS} isDarkMode={isDarkMode} />
+                <SimpleInput label="Soil pH" value={formData.ph} onChangeText={(v) => updateField("ph", v)} placeholder="7.0" icon="water-outline" COLORS={COLORS} isDarkMode={isDarkMode} />
               </View>
 
               <Text style={[styles.sectionHeader, { color: COLORS.primary, marginTop: 24 }]}>ENVIRONMENT</Text>
               <View style={styles.row}>
-                <SimpleInput label="Temperature" value={formData.temperature} onChangeText={(v) => updateField("temperature", v)} placeholder="25" icon="thermometer-outline" unit="°C" COLORS={COLORS} />
-                <SimpleInput label="Humidity" value={formData.humidity} onChangeText={(v) => updateField("humidity", v)} placeholder="50" icon="cloud-outline" unit="%" COLORS={COLORS} />
+                <SimpleInput label="Temperature" value={formData.temperature} onChangeText={(v) => updateField("temperature", v)} placeholder="25" icon="thermometer-outline" unit="°C" COLORS={COLORS} isDarkMode={isDarkMode} />
+                <SimpleInput label="Humidity" value={formData.humidity} onChangeText={(v) => updateField("humidity", v)} placeholder="50" icon="cloud-outline" unit="%" COLORS={COLORS} isDarkMode={isDarkMode} />
               </View>
-              <SimpleInput label="Average Rainfall" value={formData.rainfall} onChangeText={(v) => updateField("rainfall", v)} placeholder="200" icon="umbrella-outline" unit="mm" COLORS={COLORS} />
+              <SimpleInput label="Average Rainfall" value={formData.rainfall} onChangeText={(v) => updateField("rainfall", v)} placeholder="200" icon="umbrella-outline" unit="mm" COLORS={COLORS} isDarkMode={isDarkMode} />
             </View>
 
             <TouchableOpacity style={[styles.mainBtn, { backgroundColor: COLORS.primary }]} onPress={handleAnalyze} activeOpacity={0.8}>
-              <Text style={styles.mainBtnText}>Run Analysis</Text>
-              <Ionicons name="sparkles" size={20} color="#FFF" />
+              <Text style={[styles.mainBtnText, { color: isDarkMode ? COLORS.black : COLORS.white }]}>Run Analysis</Text>
+              <Ionicons name="sparkles" size={20} color={isDarkMode ? COLORS.black : COLORS.white} />
             </TouchableOpacity>
 
             <View style={{ height: 100 }} />
@@ -125,7 +125,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     alignItems: 'center', 
     borderRadius: 16, 
-    borderWidth: 1,
     paddingHorizontal: 16, 
     height: 56,
   },
@@ -134,17 +133,13 @@ const styles = StyleSheet.create({
   unitText: { fontSize: 14, fontWeight: '700', marginLeft: 8 },
 
   mainBtn: { 
-    height: 60, 
+    height: 64, 
     borderRadius: 20, 
     flexDirection: 'row', 
     alignItems: 'center', 
     justifyContent: 'center', 
     gap: 12, 
     marginTop: 24,
-    ...Platform.select({
-      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8 },
-      android: { elevation: 3 }
-    })
   },
-  mainBtnText: { color: '#FFF', fontSize: 18, fontWeight: '700' }
+  mainBtnText: { fontSize: 18, fontWeight: '800' }
 });

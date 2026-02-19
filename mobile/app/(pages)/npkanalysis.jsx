@@ -137,7 +137,7 @@ const NPKAnalysisPage = () => {
     const confPercent = c != null ? (c <= 1 ? `${Math.round(c * 100)}%` : `${Math.round(c)}%`) : "N/A";
 
     return (
-      <View key={idx} style={[styles.cropCard, { backgroundColor: COLORS.cardBackground, borderColor: COLORS.border }]}>
+      <View key={idx} style={[styles.cropCard, { backgroundColor: COLORS.cardBackground, borderWidth: 0 }]}>
         <View style={styles.cardHeader}>
           <View style={[styles.cropIconBox, { backgroundColor: `${COLORS.primary}10` }]}>
             <Ionicons name="leaf" size={24} color={COLORS.primary} />
@@ -175,7 +175,7 @@ const NPKAnalysisPage = () => {
         </View>
 
         <TouchableOpacity 
-          style={[styles.readFullBtn, { borderTopColor: COLORS.border }]}
+          style={styles.readFullBtn}
           onPress={() => router.push({
             pathname: '/(pages)/growthblueprint',
             params: { cropName: item.name }
@@ -254,7 +254,7 @@ const NPKAnalysisPage = () => {
             </View>
           )}
 
-          <View style={[styles.footerBanner, { backgroundColor: `${COLORS.primary}05`, borderColor: `${COLORS.primary}20` }]}>
+          <View style={[styles.footerBanner, { backgroundColor: `${COLORS.primary}05`, borderWidth: 0 }]}>
             <Ionicons name="information-circle" size={20} color={COLORS.primary} />
             <Text style={[styles.footerText, { color: COLORS.textSecondary }]}>
               These results are based on AI projections. Cross-verify with local environmental factors before planting.
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
   
   scrollContent: { padding: 20 },
   
-  soilFingerprint: { padding: 24, borderRadius: 32, marginBottom: 32, ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.2, shadowRadius: 20 }, android: { elevation: 8 } }) },
+  soilFingerprint: { padding: 24, borderRadius: 32, marginBottom: 32 },
   fingerprintHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   fingerprintTitle: { color: '#FFF', fontSize: 16, fontWeight: '800', opacity: 0.9 },
   liveBadge: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   sectionSub: { fontSize: 14, fontWeight: '500', marginTop: 4 },
 
   resultsList: { gap: 20 },
-  cropCard: { borderRadius: 32, padding: 24, borderWidth: 1, ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.04, shadowRadius: 16 }, android: { elevation: 2 } }) },
+  cropCard: { borderRadius: 32, padding: 24 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
   cropIconBox: { width: 50, height: 50, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   cropTitleInfo: { flex: 1, marginLeft: 16 },
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
   descriptionBox: { padding: 16, borderRadius: 20, marginBottom: 20 },
   descriptionText: { fontSize: 14, lineHeight: 22, fontWeight: '500' },
 
-  readFullBtn: { borderTopWidth: 1, paddingTop: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  readFullBtn: { paddingTop: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
 
   loadingBox: { alignItems: 'center', paddingVertical: 60 },
   loadingText: { marginTop: 16, fontSize: 15, fontWeight: '600' },
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   retryBtn: { paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16 },
   retryText: { color: '#FFF', fontWeight: '800' },
 
-  footerBanner: { flexDirection: 'row', padding: 20, borderRadius: 24, borderWidth: 1, gap: 14, marginTop: 40 },
+  footerBanner: { flexDirection: 'row', padding: 20, borderRadius: 24, gap: 14, marginTop: 40 },
   footerText: { flex: 1, fontSize: 13, lineHeight: 20, fontWeight: '500' }
 });
 

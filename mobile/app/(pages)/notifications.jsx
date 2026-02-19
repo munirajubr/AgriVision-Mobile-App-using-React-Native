@@ -66,6 +66,7 @@ const NotificationsPage = () => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { padding: 20 },
+  scrollView: { flex: 1 },
   headerHero: { alignItems: 'center', marginVertical: 30 },
   iconCircle: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
   heroTitle: { fontSize: 24, fontWeight: '800', marginBottom: 8 },
@@ -79,10 +80,8 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     padding: 16, 
     borderRadius: 24, 
-    ...Platform.select({ 
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 }, 
-      android: { elevation: 2 } 
-    }) 
+    borderWidth: 1,
+    borderColor: '#F0F0F0'
   },
   miniCircle: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
   featureInfo: { flex: 1 },

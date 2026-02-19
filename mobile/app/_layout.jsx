@@ -48,9 +48,7 @@ export default function RootLayout() {
   }, [user, token, segments, fontsLoaded]);
 
   const { isDarkMode } = useThemeStore();
-  const systemColorScheme = useColorScheme();
-  const effectiveDarkMode = isDarkMode || (systemColorScheme === 'dark');
-  const backgroundColor = effectiveDarkMode ? "#000000" : "#F2F2F7";
+  const backgroundColor = isDarkMode ? "#000000" : "#FFFFFF";
 
   return (
     <SafeAreaProvider>
@@ -65,7 +63,7 @@ export default function RootLayout() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
       </Stack>
-      <StatusBar style={effectiveDarkMode ? "light" : "dark"} />
+      <StatusBar style={isDarkMode ? "light" : "dark"} backgroundColor={backgroundColor} />
     </SafeAreaProvider>
   );
 }

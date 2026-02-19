@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import cloudinary from '../lib/cloudinary.js';
 
 // Generate JWT token with expiry
 const generateToken = (userId) =>
@@ -156,8 +157,29 @@ const setupProfile = async (req, res) => {
 
     // Update fields (DO NOT allow username change)
     if (fullName) user.fullName = fullName;
+
+    // Handle profile image upload to Cloudinary if it's base64
+    if (profileFields.profileImage && profileFields.profileImage.startsWith('data:image')) {
+      console.log('Uploading image to Cloudinary...');
+      try {
+        const uploadResponse = await cloudinary.uploader.upload(profileFields.profileImage, {
+          folder: 'agrivision_profiles',
+          transformation: [
+            { width: 500, height: 500, crop: "fill", gravity: "face" }
+          ]
+        });
+        profileFields.profileImage = uploadResponse.secure_url;
+        console.log('Image uploaded successfully:', uploadResponse.secure_url);
+      } catch (uploadError) {
+        console.error('Cloudinary upload error:', uploadError.message);
+        // Fallback or continue with previous image if upload fails
+      }
+    }
+
+    console.log('Updating user fields:', Object.keys(profileFields));
     Object.assign(user, profileFields);
     await user.save();
+    console.log('User profile updated in database.');
 
     const userResponse = user.toObject();
     delete userResponse.password;
@@ -170,7 +192,7 @@ const setupProfile = async (req, res) => {
       } 
     });
   } catch (error) {
-    console.error('Setup error:', error);
+    console.error('Setup error details:', error);
     res.status(500).json({ success: false, error: 'Internal server error in setup' });
   }
 };

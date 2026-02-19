@@ -38,13 +38,14 @@ export default function ProfileScreen() {
       title: "App Settings",
       items: [
         { icon: "settings-outline", label: "General Settings", route: "/(pages)/settings", color: COLORS.primary },
-        { icon: "notifications-outline", label: "Notifications", route: "/(tabs)/notifications", color: COLORS.warning },
+        { icon: "notifications-outline", label: "Notifications", route: "/(pages)/notifications", color: COLORS.warning },
       ]
     },
     {
       title: "Support & Legal",
       items: [
         { icon: "help-circle-outline", label: "Help Center", route: "/(pages)/helpsupport", color: COLORS.info },
+        { icon: "shield-checkmark-outline", label: "Privacy Policy", route: "/(pages)/privacypolicy", color: "#8b5cf6" },
         { icon: "document-text-outline", label: "Terms of Service", route: "/(pages)/terms", color: "#9C27B0" },
         { icon: "information-circle-outline", label: "About AgriVision", route: "/(pages)/about", color: COLORS.success },
       ]
@@ -52,6 +53,7 @@ export default function ProfileScreen() {
     {
       title: "Interaction",
       items: [
+        { icon: "share-social-outline", label: "Invite Friends", action: () => Alert.alert("Invite Friends", "[Coming Soon]"), color: "#ec4899" },
         { icon: "star-outline", label: "Rate Us on Store", action: handleRateApp, color: "#FFC107" },
         { icon: "mail-outline", label: "Contact Developer", action: handleContactUs, color: "#E91E63" },
       ]
@@ -67,11 +69,11 @@ export default function ProfileScreen() {
         >
           {/* Custom Profile Section */}
           <View style={styles.profileHero}>
-            <View style={[styles.avatarBox, { backgroundColor: COLORS.primary }]}>
+            <View style={[styles.avatarBox, { backgroundColor: COLORS.primary, borderWidth: 0 }]}>
               {user.profileImage ? (
                 <Image source={{ uri: user.profileImage }} style={styles.avatarImage} />
               ) : (
-                <Text style={styles.avatarInitial}>{(user.fullName || user.username || "U").charAt(0).toUpperCase()}</Text>
+                <Text style={[styles.avatarInitial, { color: isDarkMode ? COLORS.black : COLORS.white }]}>{(user.fullName || user.username || "U").charAt(0).toUpperCase()}</Text>
               )}
             </View>
             <Text style={[styles.userName, { color: COLORS.textPrimary }]}>{user.fullName || user.username || "Farmer"}</Text>
@@ -87,17 +89,13 @@ export default function ProfileScreen() {
 
           {/* Quick Stats Row */}
           <View style={styles.statsRow}>
-            <View style={[styles.statBox, { backgroundColor: COLORS.cardBackground }]}>
+            <View style={[styles.statBox, { backgroundColor: COLORS.cardBackground, borderWidth: 0 }]}>
               <Text style={[styles.statValue, { color: COLORS.textPrimary }]}>{user.farmSize || "N/A"}</Text>
               <Text style={[styles.statLabel, { color: COLORS.textTertiary }]}>Farm Size</Text>
             </View>
-            <View style={[styles.statBox, { backgroundColor: COLORS.cardBackground }]}>
+            <View style={[styles.statBox, { backgroundColor: COLORS.cardBackground, borderWidth: 0 }]}>
               <Text style={[styles.statValue, { color: COLORS.textPrimary }]}>{user.experience || "0"}</Text>
               <Text style={[styles.statLabel, { color: COLORS.textTertiary }]}>Years Exp</Text>
-            </View>
-            <View style={[styles.statBox, { backgroundColor: COLORS.cardBackground }]}>
-              <Text style={[styles.statValue, { color: COLORS.textPrimary }]}>{user.connectedDevices || "0"}</Text>
-              <Text style={[styles.statLabel, { color: COLORS.textTertiary }]}>Devices</Text>
             </View>
           </View>
 
@@ -105,11 +103,11 @@ export default function ProfileScreen() {
           {menuGroups.map((group, gIdx) => (
             <View key={gIdx} style={styles.menuGroup}>
               <Text style={[styles.groupTitle, { color: COLORS.textTertiary }]}>{group.title}</Text>
-              <View style={[styles.groupContent, { backgroundColor: COLORS.cardBackground }]}>
+              <View style={[styles.groupContent, { backgroundColor: COLORS.cardBackground, borderWidth: 0 }]}>
                 {group.items.map((item, iIdx) => (
                   <TouchableOpacity
                     key={iIdx}
-                    style={[styles.menuItem, iIdx !== group.items.length - 1 && styles.menuDivider]}
+                    style={styles.menuItem}
                     onPress={() => item.action ? item.action() : router.push(item.route)}
                   >
                     <View style={[styles.menuIconBox, { backgroundColor: `${item.color}10` }]}>
@@ -125,7 +123,7 @@ export default function ProfileScreen() {
 
           {/* Logout Section */}
           <TouchableOpacity 
-            style={[styles.logoutBtn, { backgroundColor: `${COLORS.error}10` }]}
+            style={[styles.logoutBtn, { backgroundColor: `${COLORS.error}10`, borderWidth: 0 }]}
             onPress={handleLogout}
           >
             <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
@@ -145,6 +143,8 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { padding: 20 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  scrollView: { flex: 1 },
+  headerHero: { alignItems: 'center', marginVertical: 30 },
   profileHero: { alignItems: 'center', marginBottom: 30 },
   avatarBox: {
     width: 100,
@@ -153,29 +153,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20 },
-      android: { elevation: 5 }
-    })
+    borderWidth: 0,
   },
   avatarInitial: { color: '#FFF', fontSize: 40, fontWeight: '700' },
   avatarImage: { width: 100, height: 100, borderRadius: 50 },
-  userName: { fontSize: 24, fontWeight: '700', marginBottom: 4 },
-  userEmail: { fontSize: 14, fontWeight: '400', marginBottom: 16 },
+  userName: { fontSize: 24, fontWeight: '800', marginBottom: 4, letterSpacing: -0.5 },
+  userEmail: { fontSize: 14, fontWeight: '500', marginBottom: 16 },
   editBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
-  editBtnText: { fontSize: 14, fontWeight: '600' },
+  editBtnText: { fontSize: 14, fontWeight: '700' },
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 30 },
-  statBox: { flex: 1, padding: 16, borderRadius: 24, alignItems: 'center' },
-  statValue: { fontSize: 18, fontWeight: '700', marginBottom: 2 },
-  statLabel: { fontSize: 12, fontWeight: '500' },
+  statBox: { flex: 1, padding: 16, borderRadius: 24, alignItems: 'center', borderWidth: 0 },
+  statValue: { fontSize: 18, fontWeight: '800', marginBottom: 2 },
+  statLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
   menuGroup: { marginBottom: 25 },
-  groupTitle: { fontSize: 13, fontWeight: '600', textTransform: 'uppercase', marginLeft: 16, marginBottom: 10, letterSpacing: 1 },
-  groupContent: { borderRadius: 24, overflow: 'hidden' },
-  menuItem: { flexDirection: 'row', alignItems: 'center', padding: 16 },
-  menuDivider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(0,0,0,0.05)' },
+  groupTitle: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase', marginLeft: 16, marginBottom: 10, letterSpacing: 1 },
+  groupContent: { borderRadius: 24, overflow: 'hidden', borderWidth: 0 },
+  menuItem: { flexDirection: 'row', alignItems: 'center', padding: 18 },
+  menuDivider: { borderBottomWidth: 0 },
   menuIconBox: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-  menuLabel: { flex: 1, fontSize: 16, fontWeight: '500' },
-  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 18, borderRadius: 24, gap: 10, marginTop: 10 },
-  logoutText: { fontSize: 16, fontWeight: '700' },
-  versionText: { textAlign: 'center', fontSize: 12, marginTop: 30, opacity: 0.5 }
+  menuLabel: { flex: 1, fontSize: 16, fontWeight: '600' },
+  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 18, borderRadius: 24, gap: 10, marginTop: 10, borderWidth: 0 },
+  logoutText: { fontSize: 16, fontWeight: '800' },
+  versionText: { textAlign: 'center', fontSize: 12, marginTop: 30, opacity: 0.5, fontWeight: '600' }
 });

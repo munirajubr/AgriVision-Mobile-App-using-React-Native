@@ -15,7 +15,7 @@ export default function Home() {
   const { isDarkMode } = useThemeStore();
   const COLORS = getColors(isDarkMode);
   const { user } = useAuthStore();
-  const { setActiveTab, weatherData, setWeatherData } = useDashboardStore();
+  const { weatherData, setWeatherData } = useDashboardStore();
   const router = useRouter();
 
   useEffect(() => {
@@ -53,16 +53,7 @@ export default function Home() {
     fetchHomeWeather();
   }, [user?.farmLocation]);
 
-  const handleWeatherPress = () => {
-    router.push('/(tabs)/weather');
-  };
-
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "GOOD MORNING";
-    if (hour < 17) return "GOOD AFTERNOON";
-    return "GOOD EVENING";
-  };
+  const categories = ['All', 'Crops', 'Soil', 'Weather', 'Diseases'];
 
   return (
     <View style={[styles.container, { backgroundColor: COLORS.background }]}>
@@ -71,125 +62,117 @@ export default function Home() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Premium Hero Section */}
-        <View style={styles.heroSection}>
-          <View style={styles.heroLeft}>
-            <Text style={[styles.greetingText, { color: COLORS.textTertiary }]}>{getGreeting()},</Text>
-            <Text style={[styles.userName, { color: COLORS.textPrimary }]}>{user?.fullName || user?.username || "Farmer"} 👋</Text>
+        {/* Header with Greeting and Avatar */}
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={[styles.greetingText, { color: COLORS.textPrimary }]}>Hello, {user?.fullName?.split(' ')[0] || "Farmer"}!</Text>
+            <Text style={[styles.subGreeting, { color: COLORS.textSecondary }]}>What's happening on the farm today?</Text>
           </View>
           <TouchableOpacity 
-            style={[styles.notifButton, { backgroundColor: COLORS.cardBackground }]}
+            style={styles.notifBtn}
             onPress={() => router.push('/(pages)/notifications')}
           >
-            <View style={[styles.notifIconContainer, { backgroundColor: `${COLORS.primary}15` }]}>
-              <Ionicons name="notifications" size={24} color={COLORS.primary} />
-              {/* Optional: Add a badge here if needed */}
-              <View style={[styles.notifBadge, { backgroundColor: COLORS.error }]} />
+            <View style={[styles.notifCircle, { backgroundColor: COLORS.cardBackground }]}>
+              <Ionicons name="notifications-outline" size={24} color={COLORS.textPrimary} />
             </View>
           </TouchableOpacity>
         </View>
 
-        {/* Dynamic Weather Dashboard Card */}
-        <TouchableOpacity 
-          style={[styles.weatherCard, { backgroundColor: COLORS.cardBackground }]}
-          activeOpacity={0.9}
-          onPress={handleWeatherPress}
-        >
-          {weatherData.loading ? (
-            <View style={{ height: 120, alignItems: 'center', justifyContent: 'center' }}>
-              <ActivityIndicator size="large" color={COLORS.primary} />
-              <Text style={{ marginTop: 12, color: COLORS.textTertiary, fontWeight: '600' }}>Fetching Live Weather...</Text>
-            </View>
-          ) : (
-            <>
-              <View style={styles.weatherMain}>
-                <View>
-                  <Text style={[styles.weatherLabel, { color: COLORS.textTertiary }]}>OUTDOOR TEMPERATURE</Text>
-                  <View style={styles.tempRow}>
-                    <Text style={[styles.tempMain, { color: COLORS.textPrimary }]}>{weatherData.temp}°</Text>
-                    <Text style={[styles.tempUnit, { color: COLORS.textTertiary }]}>C</Text>
-                  </View>
-                  <Text style={[styles.weatherCondition, { color: COLORS.primary }]}>{weatherData.condition} • Live Data</Text>
-                </View>
-                <View style={[styles.weatherIconContainer, { backgroundColor: `${COLORS.warning}15` }]}>
-                  <Ionicons name={weatherData.icon} size={42} color={COLORS.warning} />
-                </View>
-              </View>
-              <View style={[styles.weatherDivider, { backgroundColor: COLORS.secondaryBackground }]} />
-              <View style={styles.weatherStats}>
-                <View style={styles.weatherStatItem}>
-                  <Ionicons name="water-outline" size={16} color={COLORS.info} />
-                  <Text style={[styles.weatherStatText, { color: COLORS.textSecondary }]}>{weatherData.humidity}% Humidity</Text>
-                </View>
-                <View style={styles.weatherStatItem}>
-                  <Ionicons name="leaf-outline" size={16} color={COLORS.success} />
-                  <Text style={[styles.weatherStatText, { color: COLORS.textSecondary }]}>{weatherData.wind} km/h Wind</Text>
-                </View>
-              </View>
-            </>
-          )}
-        </TouchableOpacity>
+        {/* Featured Weather Card */}
+        <Card
+          variant="large"
+          title={`${weatherData.temp}°C ${weatherData.condition}`}
+          subtitle={`Humidity: ${weatherData.humidity}% • Wind: ${weatherData.wind} km/h`}
+          bgColor={COLORS.pastelBlue}
+          onPress={() => router.push('/(tabs)/weather')}
+          icon={weatherData.icon || 'partly-sunny'}
+          iconColor={isDarkMode ? '#FFD60A' : '#F7B500'}
+          actionLabel="Check details"
+        />
 
-        {/* Visual Hierarchy: Subtitles and Grids */}
+        {/* Popular Actions Grid */}
         <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: COLORS.textPrimary }]}>Quick Actions</Text>
+          <Text style={[styles.sectionTitle, { color: COLORS.textPrimary }]}>Quick Analysis</Text>
+          <TouchableOpacity onPress={() => router.push({ pathname: '/(pages)/all-tools', params: { category: 'Quick Analysis' } })}>
+            <Text style={[styles.seeAll, { color: COLORS.textTertiary }]}>See all</Text>
+          </TouchableOpacity>
         </View>
         
         <View style={styles.gridContainer}>
           <View style={styles.gridRow}>
             <Card
               variant="box"
-              icon="analytics-outline"
-              title="Analysis"
-              subtitle="Soil Health"
-              link="/(pages)/npkupload"
+              icon="scan-outline"
+              title="Instant Disease Diagnosis"
+              subtitle="AI Vision"
+              link="/(pages)/diagnosis"
+              bgColor={COLORS.pastelGreen}
+              themeColor="#2E7D32"
             />
             <Card
               variant="box"
-              icon="leaf-outline"
-              title="Guides"
-              subtitle="Crop Tips"
-              link="/(pages)/cropguide"
+              icon="analytics-outline"
+              title="Soil Analysis"
+              subtitle="NPK Check"
+              link="/(pages)/npkupload"
+              bgColor={COLORS.pastelPurple}
+              themeColor="#6A1B9A"
             />
           </View>
           <View style={styles.gridRow}>
             <Card
               variant="box"
-              icon="flask-outline"
-              title="Advisor"
-              subtitle="Fertilizer"
-              link="/(pages)/fertilizerguide"
+              icon="leaf-outline"
+              title="Crop Tips"
+              subtitle="24 Guides"
+              link="/(pages)/cropguide"
+              bgColor={COLORS.pastelOrange}
+              themeColor="#E65100"
             />
             <Card
               variant="box"
-              icon="pulse-outline"
-              title="Status"
-              subtitle="Real-time"
-              onPress={() => setActiveTab('devices')}
+              icon="flask-outline"
+              title="Fertilizer Advisor"
+              subtitle="Pro Tips"
+              link="/(pages)/fertilizerguide"
+              bgColor={COLORS.pastelBlue}
+              themeColor="#1565C0"
             />
           </View>
         </View>
+
+        {/* Tools Section */}
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: COLORS.textPrimary }]}>Daily Tools</Text>
+          <TouchableOpacity onPress={() => router.push({ pathname: '/(pages)/all-tools', params: { category: 'Daily Tools' } })}>
+            <Text style={[styles.seeAll, { color: COLORS.textTertiary }]}>See all</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <Card
+          variant="horizontal"
+          title="Market Trends"
+          subtitle="Real-time prices"
+          link="/(tabs)/market"
+          bgColor={COLORS.background}
+        />
+        <Card
+          variant="horizontal"
+          title="Local Weather"
+          subtitle="Forecast & Alerts"
+          link="/(tabs)/weather"
+          bgColor={COLORS.background}
+        />
       </ScrollView>
 
-      {/* Primary Access Floating Button */}
-      <View style={styles.fixedBottomContainer}>
-        <TouchableOpacity 
-          style={[styles.floatingBanner, { backgroundColor: COLORS.primary }]}
-          activeOpacity={0.9}
-          onPress={() => router.push('/(pages)/diagnosis')}
-        >
-          <View style={styles.bannerLeft}>
-            <View style={styles.bannerIconCircle}>
-              <Ionicons name="scan" size={24} color={COLORS.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.bannerTitle}>Instant Disease Detection</Text>
-              <Text style={styles.bannerSub}>Identify issues in seconds with AI Vision</Text>
-            </View>
-          </View>
-          <Ionicons name="arrow-forward-circle" size={32} color="#FFF" />
-        </TouchableOpacity>
-      </View>
+      {/* Simplified FAB for Instant Diagnosis */}
+      <TouchableOpacity 
+        style={[styles.floatingActionBtn, { backgroundColor: COLORS.success }]}
+        activeOpacity={0.8}
+        onPress={() => router.push('/(pages)/diagnosis')}
+      >
+        <Ionicons name="scan" size={28} color="#FFF" />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -199,134 +182,54 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    padding: 20,
-    paddingBottom: 160,
+    padding: 24,
+    paddingBottom: 200, // Extra padding for the floating button
   },
-  heroSection: {
+  headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 32,
     marginTop: 10,
   },
-  heroLeft: {
-    flex: 1,
-  },
   greetingText: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1.5,
-    marginBottom: 4,
-  },
-  userName: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '800',
+    letterSpacing: -0.5,
   },
-  notifButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 20,
-    padding: 2,
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 },
-      android: { elevation: 2 },
-    }),
+  subGreeting: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginTop: 4,
   },
-  notifIconContainer: {
+  notifBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  notifCircle: {
     width: '100%',
     height: '100%',
-    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
-  },
-  notifBadge: {
-    position: 'absolute',
-    top: 14,
-    right: 14,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    borderWidth: 2,
-    borderColor: '#FFF',
-  },
-  weatherCard: {
-    borderRadius: 30,
-    padding: 24,
-    marginBottom: 32,
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.05, shadowRadius: 20 },
-      android: { elevation: 3 },
-    }),
-  },
-  weatherMain: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 20,
-  },
-  weatherLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1,
-    marginBottom: 8,
-  },
-  tempRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  tempMain: {
-    fontSize: 54,
-    fontWeight: '800',
-    lineHeight: 54,
-  },
-  tempUnit: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginTop: 6,
-    marginLeft: 4,
-  },
-  weatherCondition: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginTop: 12,
-  },
-  weatherIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  weatherDivider: {
-    height: 1,
-    width: '100%',
-    opacity: 0.5,
-    marginBottom: 20,
-  },
-  weatherStats: {
-    flexDirection: 'row',
-    gap: 20,
-  },
-  weatherStatItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  weatherStatText: {
-    fontSize: 13,
-    fontWeight: '600',
+    borderRadius: 14,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 18,
-    paddingHorizontal: 4,
+    alignItems: 'flex-end',
+    marginBottom: 16,
+    marginTop: 8,
   },
   sectionTitle: {
-    fontSize: 19,
+    fontSize: 20,
     fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  seeAll: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   gridContainer: {
     gap: 16,
@@ -336,47 +239,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 16,
   },
-  fixedBottomContainer: {
+  floatingActionBtn: {
     position: 'absolute',
-    bottom: 110, // Increased to provide clear separation from the navigation bar
-    left: 20,
-    right: 20,
-    zIndex: 1000,
-  },
-  floatingBanner: {
-    padding: 20,
-    borderRadius: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.2, shadowRadius: 20 },
-      android: { elevation: 10 },
-    }),
-  },
-  bannerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    flex: 1,
-  },
-  bannerIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: '#FFF',
+    bottom: 90,
+    right: 25,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  bannerTitle: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  bannerSub: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 1000,
   },
 });

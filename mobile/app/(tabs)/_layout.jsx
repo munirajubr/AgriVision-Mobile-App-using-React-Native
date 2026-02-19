@@ -15,10 +15,10 @@ function CustomTabBar({ state, descriptors, navigation, COLORS, isDarkMode }) {
     <View style={[
       styles.tabBarContainer, 
       { 
-        bottom: Platform.OS === 'ios' ? insets.bottom + 10 : 20,
-        backgroundColor: COLORS.cardBackground,
+        bottom: Platform.OS === 'ios' ? insets.bottom + 5 : 15,
+        backgroundColor: COLORS.background,
         borderColor: COLORS.border,
-        shadowColor: isDarkMode ? '#000' : COLORS.shadow,
+        shadowColor: 'rgba(0,0,0,0.05)',
       }
     ]}>
       {state.routes.map((route, index) => {
@@ -43,8 +43,8 @@ function CustomTabBar({ state, descriptors, navigation, COLORS, isDarkMode }) {
         const getIcon = (routeName, focused) => {
           const icons = {
             index: focused ? "home" : "home-outline",
-            market: focused ? "stats-chart" : "stats-chart-outline",
-            weather: focused ? "cloud" : "cloud-outline",
+            market: focused ? "basket" : "basket-outline",
+            weather: focused ? "partly-sunny" : "partly-sunny-outline",
             profile: focused ? "person" : "person-outline",
           };
           return icons[routeName] || "square";
@@ -65,26 +65,14 @@ function CustomTabBar({ state, descriptors, navigation, COLORS, isDarkMode }) {
             key={index}
             onPress={onPress}
             activeOpacity={0.7}
-            style={[
-              styles.tabItem,
-              isFocused && { 
-                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(52, 199, 89, 0.1)',
-                flex: 2.2,
-                marginHorizontal: 4,
-              }
-            ]}
+            style={styles.tabItem}
           >
             <Ionicons 
               name={getIcon(route.name, isFocused)} 
-              size={22} 
+              size={26} 
               color={isFocused ? COLORS.primary : COLORS.textTertiary} 
-              style={{ opacity: isFocused ? 1 : 0.7 }}
             />
-            {isFocused && (
-              <Text style={[styles.tabLabel, { color: COLORS.primary }]}>
-                {getLabel(route.name)}
-              </Text>
-            )}
+            {isFocused && <View style={[styles.focusDot, { backgroundColor: COLORS.primary }]} />}
           </TouchableOpacity>
         );
       })}
@@ -117,29 +105,30 @@ const styles = StyleSheet.create({
     position: 'absolute',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    left: 15,
-    right: 15,
-    height: 72,
-    borderRadius: 36,
-    paddingHorizontal: 8,
-    elevation: 20,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 15,
+    justifyContent: 'space-around',
+    left: 20,
+    right: 20,
+    height: 64,
+    borderRadius: 32,
+    paddingHorizontal: 10,
+    elevation: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
     borderWidth: 1,
   },
   tabItem: {
-    flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 52,
-    borderRadius: 26,
+    height: '100%',
+    width: 60,
   },
-  tabLabel: {
-    fontSize: 14,
-    fontWeight: '800',
-    marginLeft: 8,
+  focusDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    marginTop: 4,
+    position: 'absolute',
+    bottom: 8,
   },
 });

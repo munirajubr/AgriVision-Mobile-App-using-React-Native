@@ -140,7 +140,6 @@ export default function CropGuide() {
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={COLORS.textTertiary} />
               </View>
-              <View style={[styles.divider, { backgroundColor: COLORS.border }]} />
               <View style={styles.footerRow}>
                 <Ionicons name="book-outline" size={16} color={COLORS.primary} />
                 <Text style={[styles.readTime, { color: COLORS.textTertiary }]}>4 min read • Intermediate</Text>
@@ -161,14 +160,14 @@ const styles = StyleSheet.create({
   hero: { marginBottom: 32, paddingLeft: 4 },
   heroTitle: { fontSize: 32, fontWeight: '800', marginBottom: 8 },
   heroSub: { fontSize: 16, fontWeight: '500', lineHeight: 24 },
-  card: { padding: 24, borderRadius: 32, marginBottom: 16, borderLeftWidth: 6, borderColor: 'transparent', ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.04, shadowRadius: 20 }, android: { elevation: 2 } }) },
+  card: { padding: 24, borderRadius: 32, marginBottom: 16, borderLeftWidth: 6, borderLeftColor: 'transparent' },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   iconBox: { width: 56, height: 56, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   headerText: { flex: 1 },
   cropName: { fontSize: 20, fontWeight: '800' },
   cropSub: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 2 },
   divider: { height: 1, marginVertical: 20, opacity: 0.5 },
-  footerRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  footerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
   readTime: { fontSize: 13, fontWeight: '600' },
   
   modalContainer: { flex: 1 },

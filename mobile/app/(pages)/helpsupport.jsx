@@ -42,7 +42,7 @@ const HelpSupportPage = () => {
           {/* Contact Grid */}
           <View style={styles.grid}>
             {contactMethods.map((item, i) => (
-              <TouchableOpacity key={i} style={[styles.contactCard, { backgroundColor: COLORS.cardBackground }]} onPress={item.action}>
+              <TouchableOpacity key={i} style={[styles.contactCard, { backgroundColor: COLORS.cardBackground, borderWidth: 0 }]} onPress={item.action}>
                 <View style={[styles.miniCircle, { backgroundColor: `${item.color}15` }]}>
                   <Ionicons name={item.icon} size={20} color={item.color} />
                 </View>
@@ -57,7 +57,7 @@ const HelpSupportPage = () => {
             <Text style={[styles.secTitle, { color: COLORS.textPrimary }]}>Frequently Asked Questions</Text>
             <View style={styles.faqList}>
               {faqs.map((faq, i) => (
-                <TouchableOpacity key={i} style={[styles.faqBox, { backgroundColor: COLORS.cardBackground }]} onPress={() => setExpandedFAQ(expandedFAQ === i ? null : i)}>
+                <TouchableOpacity key={i} style={[styles.faqBox, { backgroundColor: COLORS.cardBackground, borderWidth: 0 }]} onPress={() => setExpandedFAQ(expandedFAQ === i ? null : i)}>
                   <View style={styles.faqHeader}>
                     <Text style={[styles.faqQuest, { color: COLORS.textPrimary }]}>{faq.question}</Text>
                     <Ionicons name={expandedFAQ === i ? "chevron-up" : "chevron-down"} size={18} color={COLORS.textTertiary} />
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   heroTitle: { fontSize: 24, fontWeight: '800', marginBottom: 8 },
   heroSub: { fontSize: 15, fontWeight: '500' },
   grid: { flexDirection: 'row', gap: 12, marginBottom: 32 },
-  contactCard: { flex: 1, padding: 16, borderRadius: 24, alignItems: 'center', ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 }, android: { elevation: 2 } }) },
+  contactCard: { flex: 1, padding: 16, borderRadius: 24, alignItems: 'center' },
   miniCircle: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   cardTitle: { fontSize: 14, fontWeight: '700', marginBottom: 4 },
   cardDesc: { fontSize: 11, fontWeight: '500', textAlign: 'center' },
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   faqBox: { padding: 20, borderRadius: 24 },
   faqHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
   faqQuest: { fontSize: 15, fontWeight: '700', flex: 1 },
-  faqAns: { fontSize: 14, lineHeight: 22, marginTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.03)', paddingTop: 12 }
+  faqAns: { fontSize: 14, lineHeight: 22, marginTop: 12, paddingTop: 12 }
 });
 
 export default HelpSupportPage;
