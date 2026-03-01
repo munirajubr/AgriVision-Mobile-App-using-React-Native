@@ -7,7 +7,8 @@ import {
   resendVerificationOTP, 
   forgotPassword, 
   verifyResetOTP, 
-  resetPassword 
+  resetPassword,
+  googleLogin
 } from '../controllers/authController.js';
 import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
@@ -40,6 +41,7 @@ router.post('/login', loginUser);
 router.post('/forgot-password', forgotPassword);
 router.post('/verify-reset-otp', verifyResetOTP);
 router.post('/reset-password', resetPassword);
+router.post('/google', googleLogin);
 router.post('/setup', setupProfile);
 router.put('/profile', protect, setupProfile); // Adding PUT /profile with protection
 

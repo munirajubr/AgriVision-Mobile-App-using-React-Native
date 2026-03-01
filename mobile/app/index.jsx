@@ -70,7 +70,7 @@ const Onboarding = () => {
 
   const renderItem = ({ item }) => (
     <View style={styles.slide}>
-      <View style={[styles.iconContainer, { backgroundColor: `${COLORS.primary}15` }]}>
+      <View style={[styles.iconContainer, { backgroundColor: `${COLORS.primary}10` }]}>
         <Ionicons name={item.icon} size={100} color={COLORS.primary} />
       </View>
       <View style={styles.textContainer}>
@@ -134,11 +134,20 @@ const Onboarding = () => {
 
           <TouchableOpacity
             style={[styles.button, { backgroundColor: COLORS.primary }]}
-            onPress={() => router.replace('/(auth)')}
+            onPress={() => router.replace('/signup')}
             activeOpacity={0.8}
           >
             <Text style={styles.buttonText}>Get Started</Text>
             <Ionicons name="arrow-forward" size={20} color="#fff" />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.loginLink}
+            onPress={() => router.push('/(auth)')}
+          >
+            <Text style={[styles.loginLinkText, { color: COLORS.textPrimary }]}>
+              Already have an account? <Text style={{ color: COLORS.primary, fontWeight: '800' }}>Login</Text>
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -161,7 +170,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   logo: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '900',
     letterSpacing: -1,
   },
@@ -172,33 +181,33 @@ const styles = StyleSheet.create({
     padding: 40,
   },
   iconContainer: {
-    width: 220,
-    height: 220,
-    borderRadius: 110,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 50,
+    marginBottom: 40,
   },
   textContainer: {
     alignItems: 'center',
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '800',
     textAlign: 'center',
     marginBottom: 16,
     letterSpacing: -0.5,
   },
   description: {
-    fontSize: 17,
+    fontSize: 16,
     textAlign: 'center',
-    lineHeight: 26,
+    lineHeight: 24,
     paddingHorizontal: 20,
-    opacity: 0.8,
+    opacity: 0.7,
   },
   footer: {
     paddingHorizontal: 40,
-    paddingBottom: 50,
+    paddingBottom: 40,
   },
   paginator: {
     flexDirection: 'row',
@@ -208,13 +217,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   dot: {
-    height: 8,
-    borderRadius: 4,
+    height: 6,
+    borderRadius: 3,
     marginHorizontal: 4,
   },
   button: {
-    height: 64,
-    borderRadius: 22,
+    height: 60,
+    borderRadius: 18,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -224,6 +233,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '800',
+  },
+  loginLink: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  loginLinkText: {
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
 

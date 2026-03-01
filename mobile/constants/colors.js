@@ -2,91 +2,97 @@
 // Light and Dark mode support with agriculture-friendly green accent
 
 const LIGHT_COLORS = {
-  // Primary colors - Dark and clean
-  primary: "#000000",
-  primaryLight: "#333333",
-  primaryDark: "#000000",
+  // Primary colors - Nature/Agriculture Green
+  primary: "#2E7D32", 
+  primaryLight: "#4CAF50",
+  primaryDark: "#1B5E20",
   
   // Backgrounds
   background: "#FFFFFF",
-  cardBackground: "#F8F9FB",
-  secondaryBackground: "#F2F2F7",
+  cardBackground: "#FFFFFF",
+  secondaryBackground: "#F8F9FB",
   
   // Text colors
   textPrimary: "#1A1A1A",
-  textSecondary: "#666666",
-  textTertiary: "#999999",
-  placeholderText: "#C7C7CC",
+  textSecondary: "#757575",
+  textTertiary: "#9E9E9E",
+  placeholderText: "#BDBDBD",
   
   // Borders and separators
-  border: "#EEEEEE",
-  separator: "#F2F2F7",
+  border: "#E0E0E0",
+  separator: "#F5F5F5",
   
   // Status colors
-  error: "#FF3B30",
-  warning: "#FFCC00",
-  success: "#34C759",
-  info: "#007AFF",
+  error: "#D32F2F",
+  warning: "#FFA000",
+  success: "#388E3C",
+  info: "#1976D2",
   
   // Pastel backgrounds for categories
-  pastelGreen: "#E6F7ED",
-  pastelPurple: "#F4EBFF",
-  pastelBlue: "#EBF5FF",
-  pastelOrange: "#FFF7E6",
-  pastelPink: "#FFF0F5",
+  pastelGreen: "#E8F5E9",
+  pastelPurple: "#F3E5F5",
+  pastelBlue: "#E3F2FD",
+  pastelOrange: "#FFF3E0",
+  pastelPink: "#FCE4EC",
 
   // UI elements
-  inactive: "#C7C7CC",
-  shadow: "rgba(0, 0, 0, 0.05)",
-  overlay: "rgba(0, 0, 0, 0.4)",
+  inactive: "#E0E0E0",
+  shadow: "rgba(0, 0, 0, 0.08)",
+  overlay: "rgba(0, 0, 0, 0.5)",
   
   // Fixed colors
   white: "#FFFFFF",
   black: "#000000",
+  google: "#DB4437",
+  facebook: "#4267B2",
+  twitter: "#1DA1F2",
 };
 
 const DARK_COLORS = {
-  // Primary colors - White and clean for dark mode
-  primary: "#FFFFFF",
-  primaryLight: "#EEEEEE",
-  primaryDark: "#FFFFFF",
+  // Primary colors - Vibrant Green for Dark Mode
+  primary: "#4CAF50",
+  primaryLight: "#81C784",
+  primaryDark: "#388E3C",
   
   // Backgrounds
-  background: "#000000",
-  cardBackground: "#111111",
-  secondaryBackground: "#1A1A1A",
+  background: "#121212",
+  cardBackground: "#1E1E1E",
+  secondaryBackground: "#2C2C2C",
   
   // Text colors
   textPrimary: "#FFFFFF",
-  textSecondary: "#AAAAAA",
-  textTertiary: "#666666",
-  placeholderText: "#48484A",
+  textSecondary: "#B0B0B0",
+  textTertiary: "#757575",
+  placeholderText: "#616161",
   
   // Borders and separators
-  border: "#222222",
-  separator: "#1A1A1A",
+  border: "#333333",
+  separator: "#2C2C2C",
   
   // Status colors
-  error: "#FF453A",
-  warning: "#FFD60A",
-  success: "#32D74B",
-  info: "#0A84FF",
+  error: "#EF5350",
+  warning: "#FFB300",
+  success: "#43A047",
+  info: "#42A5F5",
   
   // Darker pastel backgrounds for dark mode
-  pastelGreen: "#0F2618",
-  pastelPurple: "#1B0F26",
-  pastelBlue: "#0F1B26",
-  pastelOrange: "#261B0F",
-  pastelPink: "#260F1B",
+  pastelGreen: "#1B2E1B",
+  pastelPurple: "#2E1B2E",
+  pastelBlue: "#1B232E",
+  pastelOrange: "#2E231B",
+  pastelPink: "#2E1B23",
 
   // UI elements
-  inactive: "#3A3A3C",
+  inactive: "#333333",
   shadow: "rgba(0, 0, 0, 0.5)",
-  overlay: "rgba(0, 0, 0, 0.6)",
+  overlay: "rgba(0, 0, 0, 0.7)",
   
   // Fixed colors
   white: "#FFFFFF",
   black: "#000000",
+  google: "#DB4437",
+  facebook: "#4267B2",
+  twitter: "#1DA1F2",
 };
 
 // Export function to get colors based on theme

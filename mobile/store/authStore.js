@@ -266,6 +266,50 @@ export const useAuthStore = create((set, get) => ({
     set({ token: null, user: null });
   },
 
+  // continueWithGoogle
+  continueWithGoogle: async (googleUser) => {
+    set({ isLoading: true });
+    try {
+      // If we don't have googleUser yet, we assume it's triggered from UI
+      // In a real app, you'd use expo-auth-session here
+      // For now, we expect the UI to pass the data or we provide a clear error
+      if (!googleUser) {
+        throw new Error("Google login configuration required");
+      }
+
+      const response = await fetch(`${API_URL}/api/auth/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(googleUser),
+      });
+
+      let data;
+      const text = await response.text();
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error(text || "Invalid response from server");
+      }
+
+      set({ isLoading: false });
+
+      if (response.ok && data.success) {
+        await AsyncStorage.setItem("user", JSON.stringify(data.user));
+        await AsyncStorage.setItem("token", data.token);
+        set({ user: data.user, token: data.token });
+        return { success: true };
+      } else if (data.needsVerification) {
+        return { success: true, needsVerification: true, email: data.email };
+      } else {
+        throw new Error(data.error || "Google Sign-In failed");
+      }
+    } catch (error) {
+      console.error("[GoogleLogin] Error:", error);
+      set({ isLoading: false });
+      return { success: false, error: error.message };
+    }
+  },
+
   // Warmup server (Ping to wake up Render free tier)
   warmupServer: async () => {
     try {

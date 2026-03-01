@@ -386,6 +386,86 @@ const resetPassword = async (req, res) => {
   }
 };
 
+// -- Google Login --
+const googleLogin = async (req, res) => {
+  try {
+    const { email, fullName, sub } = req.body; // Sub is Google's unique user ID
+
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Google login failed: No email provided' });
+    }
+
+    const emailNormalized = email.toLowerCase().trim();
+    let user = await User.findOne({ email: emailNormalized });
+
+    if (user) {
+      if (user.isVerified) {
+        // Standard login for verified users
+        const token = generateToken(user._id);
+        return res.status(200).json({
+          success: true,
+          token,
+          user: {
+            id: user._id,
+            fullName: user.fullName,
+            email: user.email,
+            username: user.username,
+            avatar: user.avatar,
+            isVerified: user.isVerified,
+            phone: user.phone,
+            farmLocation: user.farmLocation,
+            farmSize: user.farmSize,
+          },
+        });
+      } else {
+        // Exists but not verified - resend OTP
+        const otp = generateOTP();
+        const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+        user.verificationOTP = otp;
+        user.verificationOTPExpires = otpExpires;
+        await user.save();
+        
+        await sendOTP(emailNormalized, otp, 'verification');
+        return res.status(200).json({ 
+          success: false, 
+          needsVerification: true, 
+          email: emailNormalized,
+          message: 'Account exists but is not verified. A new verification code has been sent.' 
+        });
+      }
+    }
+
+    // New user from Google
+    const username = await generateUniqueUsername(fullName || "farmer");
+    const otp = generateOTP();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+    user = new User({
+      fullName: fullName || "AgriVision User",
+      email: emailNormalized,
+      username,
+      password: Math.random().toString(36).slice(-10), // Random password for social login
+      isVerified: false, // Force verification as requested by user
+      verificationOTP: otp,
+      verificationOTPExpires: otpExpires,
+    });
+
+    await user.save();
+    await sendOTP(emailNormalized, otp, 'verification');
+
+    res.status(200).json({
+      success: false,
+      needsVerification: true,
+      email: emailNormalized,
+      message: 'Account created using Google. Please verify your email to continue.'
+    });
+
+  } catch (error) {
+    console.error('[Google Login] Error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+};
+
 export {
   registerUser,
   loginUser,
@@ -395,4 +475,5 @@ export {
   forgotPassword,
   verifyResetOTP,
   resetPassword,
+  googleLogin,
 };
