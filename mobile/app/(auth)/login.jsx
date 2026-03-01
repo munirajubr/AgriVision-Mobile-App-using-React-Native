@@ -103,8 +103,16 @@ export default function Login() {
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
                 />
-                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                  <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} color={COLORS.textTertiary} />
+                <TouchableOpacity 
+                  onPress={() => setShowPassword(!showPassword)}
+                  hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                  style={{ padding: 8 }}
+                >
+                  <Ionicons 
+                    name={showPassword ? "eye" : "eye-off"} 
+                    size={22} 
+                    color={showPassword ? COLORS.primary : COLORS.textTertiary} 
+                  />
                 </TouchableOpacity>
               </View>
             </View>

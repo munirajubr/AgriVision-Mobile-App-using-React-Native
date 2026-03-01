@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     marginBottom: 15,
     letterSpacing: -0.5,
-    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+    fontFamily: 'serif',
   },
   description: {
     fontSize: 17,
