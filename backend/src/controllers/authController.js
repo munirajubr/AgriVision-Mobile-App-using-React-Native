@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import PendingUser from '../models/PendingUser.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import cloudinary from '../lib/cloudinary.js';
@@ -46,76 +47,52 @@ const registerUser = async (req, res) => {
     }
 
     const emailNormalized = email.toLowerCase().trim();
-    let user = await User.findOne({ email: emailNormalized });
+    const existingUser = await User.findOne({ email: emailNormalized });
 
-    if (user) {
-      if (user.isVerified) {
-        return res.status(409).json({ success: false, error: 'Email already exists' });
-      } else {
-        // Update existing unverified user
-        const otp = generateOTP();
-        const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
-        
-        user.fullName = fullName;
-        user.password = password; // Will be hashed by pre-save middleware
-        user.verificationOTP = otp;
-        user.verificationOTPExpires = otpExpires;
-        
-        console.log(`[Auth] Updating existing unverified user: ${emailNormalized}`);
-        await user.save();
-        await sendOTP(emailNormalized, otp, 'verification');
-        
-        return res.status(200).json({
-          success: true,
-          message: 'An unverified account already exists. A new verification code has been sent.',
-          email: emailNormalized
-        });
-      }
+    if (existingUser && existingUser.isVerified) {
+      return res.status(409).json({ success: false, error: 'Email already exists and is verified' });
     }
 
-    // Generate unique username
-    const username = await generateUniqueUsername(fullName);
-    const profileImage = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
-
-    // Generate 6-digit verification code
+    // Generate unique username and OTP
     const otp = generateOTP();
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    user = new User({
-      fullName,
-      username,
-      email: emailNormalized,
-      password,
-      profileImage,
-      isVerified: false,
-      verificationOTP: otp,
-      verificationOTPExpires: otpExpires,
-    });
+    // Create or Update Pending Registration
+    // DO NOT hash here, let User model do it on final save to keep things consistent
+    // or hash here if you prefer. User model has a pre-save hook that will hash it on User.save()
+    // So if we save the plain password in PendingUser, it will be hashed when we finally create the User.
+    await PendingUser.findOneAndUpdate(
+      { email: emailNormalized },
+      { 
+        fullName, 
+        email: emailNormalized, 
+        password, 
+        otp, 
+        otpExpires 
+      },
+      { upsert: true, new: true }
+    );
 
-    console.log(`[Auth] Registering new user: ${emailNormalized}`);
-    await user.save();
+    console.log(`[Auth] OTP generated for ${emailNormalized}: ${otp}`);
 
     // Send the email
     const emailSent = await sendOTP(emailNormalized, otp, 'verification');
 
     if (!emailSent) {
-      // If email fails, we might still want to keep the user but inform them
-      // Or we could delete the user. Let's keep it for now but return a warning.
-      return res.status(201).json({
-        success: true,
-        message: 'Account created, but failed to send verification email. Please request a new code.',
-        email: emailNormalized
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to send verification email. Please check your email address and try again.',
       });
     }
 
-    res.status(201).json({
+    res.status(200).json({
       success: true,
       message: 'Verification code sent to your email.',
       email: emailNormalized
     });
   } catch (error) {
-    console.error('Register error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    console.error('[Register] Error:', error);
+    res.status(500).json({ success: false, error: error.message || 'Internal server error' });
   }
 };
 
@@ -128,26 +105,50 @@ const verifyEmail = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Email and OTP are required' });
     }
 
-    const user = await User.findOne({ 
-      email: email.toLowerCase().trim(),
-      verificationOTP: otp,
-      verificationOTPExpires: { $gt: Date.now() }
+    const emailNormalized = email.toLowerCase().trim();
+
+    // 1. Find Pending data
+    const pending = await PendingUser.findOne({ 
+      email: emailNormalized,
+      otp,
+      otpExpires: { $gt: Date.now() }
     });
 
-    if (!user) {
+    if (!pending) {
       return res.status(400).json({ success: false, error: 'Invalid or expired OTP' });
     }
 
-    user.isVerified = true;
-    user.verificationOTP = undefined;
-    user.verificationOTPExpires = undefined;
+    // 2. Finalize registration: Create or Update User
+    let user = await User.findOne({ email: emailNormalized });
+
+    if (!user) {
+      const username = await generateUniqueUsername(pending.fullName);
+      const profileImage = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+      
+      user = new User({
+        fullName: pending.fullName,
+        username,
+        email: emailNormalized,
+        password: pending.password,
+        profileImage,
+        isVerified: true
+      });
+    } else {
+      user.fullName = pending.fullName;
+      user.password = pending.password;
+      user.isVerified = true;
+    }
+
     await user.save();
+    
+    // 3. Cleanup pending entry
+    await PendingUser.deleteOne({ _id: pending._id });
 
     const token = generateToken(user._id);
 
     res.status(200).json({
       success: true,
-      message: 'Email verified successfully',
+      message: 'Account created and verified successfully',
       token,
       user: {
         id: user._id,
@@ -159,31 +160,54 @@ const verifyEmail = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Verify email error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    console.error('[VerifyEmail] Error:', error);
+    res.status(500).json({ success: false, error: error.message || 'Internal server error' });
   }
 };
+
 
 // -- Resend Verification OTP --
 const resendVerificationOTP = async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ success: false, error: 'Email is required' });
+    const emailNormalized = email.toLowerCase().trim();
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
-    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
-    if (user.isVerified) return res.status(400).json({ success: false, error: 'Email already verified' });
+    // 1. If user is already verified, stop
+    const user = await User.findOne({ email: emailNormalized });
+    if (user && user.isVerified) return res.status(400).json({ success: false, error: 'Email already verified' });
+
+    // 2. Check for pending registration
+    let pending = await PendingUser.findOne({ email: emailNormalized });
+    
+    // Fallback for legacy unverified users in User collection
+    if (!pending && user && !user.isVerified) {
+      pending = new PendingUser({
+        fullName: user.fullName,
+        email: emailNormalized,
+        password: user.password, // This will be hashed, but User.save will re-hash if we're not careful later. But for OTP resending it's fine.
+        otp: generateOTP(),
+        otpExpires: new Date(Date.now() + 10 * 60 * 1000)
+      });
+    }
+
+    if (!pending) {
+      return res.status(404).json({ success: false, error: 'No unverified registration found. Please sign up first.' });
+    }
 
     const otp = generateOTP();
-    user.verificationOTP = otp;
-    user.verificationOTPExpires = new Date(Date.now() + 10 * 60 * 1000);
-    await user.save();
+    pending.otp = otp;
+    pending.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+    await pending.save();
 
-    await sendOTP(user.email, otp, 'verification');
+    const emailSent = await sendOTP(emailNormalized, otp, 'verification');
+    if (!emailSent) {
+      return res.status(500).json({ success: false, error: 'Failed to send verification email.' });
+    }
 
-    res.status(200).json({ success: true, message: 'New verification code sent' });
+    res.status(200).json({ success: true, message: 'New verification code sent to your email.' });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    res.status(500).json({ success: false, error: error.message || 'Internal server error' });
   }
 };
 

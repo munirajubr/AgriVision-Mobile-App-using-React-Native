@@ -13,12 +13,40 @@ import { getColors } from "../constants/colors";
 SplashScreen.preventAutoHideAsync();
 
 function CustomSplashScreen({ colors }) {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const textFadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 4,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.timing(textFadeAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   return (
     <View style={[styles.splashContainer, { backgroundColor: colors.primary }]}>
-      <View style={styles.splashContent}>
-        <Ionicons name="leaf" size={80} color="#FFF" />
-        <Text style={styles.splashText}>AgriVision</Text>
-      </View>
+      <Animated.View style={[styles.splashContent, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
+        <Ionicons name="leaf" size={100} color="#FFF" />
+        <Animated.Text style={[styles.splashText, { opacity: textFadeAnim, marginTop: 15 }]}>
+          AgriVision
+        </Animated.Text>
+      </Animated.View>
     </View>
   );
 }
