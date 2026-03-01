@@ -14,7 +14,7 @@ export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
 
-  const { checkAuth, user, token } = useAuthStore();
+  const { checkAuth, user, token, warmupServer } = useAuthStore();
 
   const [fontsLoaded] = useFonts({
     "JetBrainsMono-Medium": require("../assets/fonts/JetBrainsMono-Medium.ttf"),
@@ -25,6 +25,7 @@ export default function RootLayout() {
   }, [fontsLoaded]);
 
   useEffect(() => {
+    warmupServer(); // Wake up the server
     checkAuth();
   }, []);
 

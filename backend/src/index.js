@@ -19,6 +19,10 @@ app.use(express.json({ limit: '50mb' })); // Body parser for JSON data
 app.use(express.urlencoded({ limit: '50mb', extended: true })); // For large form-data
 app.use(cors()); // Enable CORS
 
+app.get("/", (req, res) => {
+  res.status(200).json({ message: "Server is awake" });
+});
+
 // Route setup
 app.use("/api/auth", authRoutes);
 app.use("/api/devices", deviceRoutes);

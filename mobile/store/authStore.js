@@ -253,4 +253,11 @@ export const useAuthStore = create((set, get) => ({
     }
     set({ token: null, user: null });
   },
+
+  // Warmup server (Ping to wake up Render free tier)
+  warmupServer: async () => {
+    try {
+      fetch(`${API_URL}/`).catch(() => {});
+    } catch (e) {}
+  },
 }));
