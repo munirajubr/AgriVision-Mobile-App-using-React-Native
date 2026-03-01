@@ -17,10 +17,14 @@ export const useAuthStore = create((set, get) => ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fullName, email, password }),
       });
-      const data = await response.json().catch(async () => {
-        const text = await response.text();
-        throw new Error(text || "Invalid response");
-      });
+      let data;
+      const text = await response.text();
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error(text || "Invalid response from server");
+      }
+
       if (!response.ok) {
         const error = new Error(data.error || data.message || "Register failed");
         error.email = data.email;
@@ -81,10 +85,14 @@ export const useAuthStore = create((set, get) => ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ identifier, password }),
       });
-      const data = await response.json().catch(async () => {
-        const text = await response.text();
-        throw new Error(text || "Invalid response");
-      });
+      let data;
+      const text = await response.text();
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error(text || "Invalid response from server");
+      }
+
       if (!response.ok) {
         const error = new Error(data.error || data.message || "Login failed");
         error.email = data.email;
@@ -179,10 +187,14 @@ export const useAuthStore = create((set, get) => ({
         },
         body: JSON.stringify(profileDetails),
       });
-      const data = await response.json().catch(async () => {
-        const text = await response.text();
-        throw new Error(text || "Invalid response");
-      });
+      let data;
+      const text = await response.text();
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error(text || "Invalid response from server");
+      }
+
       if (!response.ok) throw new Error(data.error || "Setup failed");
       await AsyncStorage.setItem("user", JSON.stringify(data.user));
       set({ user: data.user, isLoading: false });

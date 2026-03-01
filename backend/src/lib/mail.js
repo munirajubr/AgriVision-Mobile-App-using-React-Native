@@ -10,6 +10,19 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// Verify connection configuration
+if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+  transporter.verify((error, success) => {
+    if (error) {
+      console.error('[Mail] Connection verification failed:', error.message);
+    } else {
+      console.log('[Mail] Server is ready to take our messages');
+    }
+  });
+} else {
+  console.warn('[Mail] EMAIL_USER or EMAIL_PASS missing in .env');
+}
+
 export const sendOTP = async (email, otp, type = 'verification') => {
   const subject = type === 'verification' ? 'Email Verification - AgriVision' : 'Password Reset - AgriVision';
   const text = type === 'verification' 
