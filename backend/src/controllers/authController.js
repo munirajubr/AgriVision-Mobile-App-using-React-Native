@@ -78,10 +78,10 @@ const registerUser = async (req, res) => {
     // Send the email
     const emailSent = await sendOTP(emailNormalized, otp, 'verification');
 
-    if (!emailSent) {
+    if (!emailSent.success) {
       return res.status(500).json({
         success: false,
-        error: 'Failed to send verification email. Please check your email address and try again.',
+        error: `Failed to send verification email: ${emailSent.error || 'Unknown error'}. Please check your email address and try again.`,
       });
     }
 
@@ -201,8 +201,8 @@ const resendVerificationOTP = async (req, res) => {
     await pending.save();
 
     const emailSent = await sendOTP(emailNormalized, otp, 'verification');
-    if (!emailSent) {
-      return res.status(500).json({ success: false, error: 'Failed to send verification email.' });
+    if (!emailSent.success) {
+      return res.status(500).json({ success: false, error: `Failed to send verification email: ${emailSent.error}` });
     }
 
     res.status(200).json({ success: true, message: 'New verification code sent to your email.' });
@@ -351,7 +351,10 @@ const forgotPassword = async (req, res) => {
     await user.save();
 
     console.log(`[Auth] Sending forgot password OTP to: ${user.email}`);
-    await sendOTP(user.email, otp, 'reset');
+    const emailSent = await sendOTP(user.email, otp, 'reset');
+    if (!emailSent.success) {
+      return res.status(500).json({ success: false, error: `Failed to send reset email: ${emailSent.error}` });
+    }
 
     res.status(200).json({ success: true, message: 'Password reset code sent to your email' });
   } catch (error) {

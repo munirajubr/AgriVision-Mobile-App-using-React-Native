@@ -3,15 +3,11 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true, // Use SSL
+  service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-  logger: true,
-  debug: true,
 });
 
 // Verify connection configuration
@@ -58,9 +54,9 @@ export const sendOTP = async (email, otp, type = 'verification') => {
       html,
     });
     console.log('Email sent: %s', info.messageId);
-    return true;
+    return { success: true };
   } catch (error) {
     console.error('Error sending email:', error);
-    return false;
+    return { success: false, error: error.message };
   }
 };
