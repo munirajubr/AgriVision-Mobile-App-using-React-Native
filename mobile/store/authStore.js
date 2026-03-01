@@ -8,38 +8,27 @@ export const useAuthStore = create((set, get) => ({
   isLoading: false,
   isCheckingAuth: true,
 
-  // Register
-  register: async (fullName, email, password) => {
+  // Step 1: Request OTP
+  register: async (email) => {
     set({ isLoading: true });
     try {
       const response = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName, email, password }),
+        body: JSON.stringify({ email }),
       });
-      let data;
-      const text = await response.text();
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        throw new Error(text || "Invalid response from server");
-      }
-
-      if (!response.ok) {
-        const error = new Error(data.error || data.message || "Register failed");
-        error.email = data.email;
-        throw error;
-      }
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Request failed");
       set({ isLoading: false });
       return { success: true, message: data.message, email: data.email || email };
     } catch (error) {
-      console.error("[Register] Error:", error);
+      console.error("[RegisterOTP] Error:", error.message);
       set({ isLoading: false });
-      return { success: false, error: error.message, email: error.email || email };
+      return { success: false, error: error.message };
     }
   },
 
-  // Verify Email
+  // Step 2: Verify OTP
   verifyEmail: async (email, otp) => {
     set({ isLoading: true });
     try {
@@ -50,6 +39,26 @@ export const useAuthStore = create((set, get) => ({
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Verification failed");
+      set({ isLoading: false });
+      return { success: true, message: data.message };
+    } catch (error) {
+      set({ isLoading: false });
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Step 3: Finalize (Name & Pass)
+  finalizeRegistration: async (email, fullName, password) => {
+    set({ isLoading: true });
+    try {
+      const response = await fetch(`${API_URL}/api/auth/finalize-registration`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, fullName, password }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Registration failed");
+      
       await AsyncStorage.setItem("user", JSON.stringify(data.user));
       await AsyncStorage.setItem("token", data.token);
       set({ user: data.user, token: data.token, isLoading: false });

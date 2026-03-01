@@ -38,8 +38,11 @@ export default function VerifyEmail() {
     const result = await verifyEmail(email, otp);
 
     if (result.success) {
-      Alert.alert("Success", "Email verified successfully!", [
-        { text: "Continue", onPress: () => router.replace("/(auth)/setup") }
+      Alert.alert("Success", result.message, [
+        { text: "Continue", onPress: () => router.replace({
+          pathname: "/(auth)/finalize-signup",
+          params: { email }
+        }) }
       ]);
     } else {
       Alert.alert("Error", result.error);
@@ -94,17 +97,15 @@ export default function VerifyEmail() {
                   style={styles.inputIcon}
                 />
                 <TextInput
-                  style={[styles.input, { color: COLORS.textPrimary }]}
+                  style={[styles.input, { flex: 1, fontSize: 32, fontWeight: 'bold', color: COLORS.textPrimary, letterSpacing: 10 }]}
                   placeholder="123456"
                   placeholderTextColor={COLORS.textTertiary}
                   value={otp}
                   onChangeText={setOtp}
                   keyboardType="number-pad"
                   maxLength={6}
-                  letterSpacing={10}
                   textAlign="center"
-                  style={{ flex:1, fontSize: 24, fontWeight: 'bold', color: COLORS.textPrimary }}
-                />
+                 />
               </View>
             </View>
 

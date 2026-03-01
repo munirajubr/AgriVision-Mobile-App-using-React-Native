@@ -27,31 +27,64 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
 
   const { isDarkMode } = useThemeStore();
   const COLORS = getColors(isDarkMode);
-  const { isLoading, register } = useAuthStore();
+  const { isLoading, register, verifyEmail, finalizeRegistration } = useAuthStore();
   const router = useRouter();
 
-  const handleSignUp = async () => {
-    if (!fullName || !email || !password || !confirmPassword) {
-      Alert.alert("Error", "Please fill in all fields.");
-      return;
-    }
-    if (password !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match.");
+  const handleAction = async () => {
+    // Phase 1: Request OTP
+    if (!showOtpInput) {
+      if (!fullName || !email || !password || !confirmPassword) {
+        Alert.alert("Error", "Please fill in all fields before verifying.");
+        return;
+      }
+      if (password !== confirmPassword) {
+        Alert.alert("Error", "Passwords do not match.");
+        return;
+      }
+      if (password.length < 6) {
+        Alert.alert("Error", "Password must be at least 6 characters.");
+        return;
+      }
+
+      const result = await register(email);
+
+      if (result.success) {
+        setShowOtpInput(true);
+        Alert.alert("OTP Sent", "A 6-digit code has been sent to your email.");
+      } else {
+        Alert.alert("Error", result.error);
+      }
       return;
     }
 
-    const result = await register(fullName, email, password);
+    // Phase 2: Verify & Finalize
+    if (!isEmailVerified) {
+      if (otp.length !== 6) {
+        Alert.alert("Error", "Please enter the 6-digit OTP.");
+        return;
+      }
 
-    if (!result.success && !result.email) {
-      Alert.alert("Error", result.error);
-    } else {
-      router.push({
-        pathname: "/verify-email",
-        params: { email: result.email || email }
-      });
+      const verifyResult = await verifyEmail(email, otp);
+      if (verifyResult.success) {
+        setIsEmailVerified(true);
+        // Automatically try to finalize
+        const finalizeResult = await finalizeRegistration(email, fullName, password);
+        if (finalizeResult.success) {
+          Alert.alert("Success", "Account created successfully!", [
+            { text: "Continue", onPress: () => router.replace("/(auth)/setup") }
+          ]);
+        } else {
+          Alert.alert("Error", finalizeResult.error);
+        }
+      } else {
+        Alert.alert("Error", verifyResult.error);
+      }
     }
   };
 
@@ -78,11 +111,14 @@ export default function Signup() {
               </View>
               <Text style={[styles.logoText, { color: COLORS.primary }]}>AgriVision</Text>
             </View>
-            <Text style={[styles.subTitle, { color: COLORS.textPrimary }]}>Create your Account</Text>
+            <Text style={[styles.subTitle, { color: COLORS.textPrimary }]}>
+              {isEmailVerified ? "Registration Complete!" : "Create your Account"}
+            </Text>
           </View>
 
           {/* Form Section */}
           <View style={styles.form}>
+            {/* Full Name */}
             <View style={styles.inputGroup}>
               <TextInput
                 style={[styles.input, { color: COLORS.textPrimary, borderBottomColor: COLORS.border }]}
@@ -91,21 +127,46 @@ export default function Signup() {
                 value={fullName}
                 onChangeText={setFullName}
                 autoCapitalize="words"
+                editable={!isEmailVerified}
               />
             </View>
 
+            {/* Email */}
             <View style={styles.inputGroup}>
               <TextInput
                 style={[styles.input, { color: COLORS.textPrimary, borderBottomColor: COLORS.border }]}
-                placeholder="Email"
+                placeholder="Email Address"
                 placeholderTextColor={COLORS.placeholderText}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                editable={!showOtpInput}
               />
             </View>
 
+            {/* OTP Input - Visible after sending */}
+            {showOtpInput && !isEmailVerified && (
+              <View style={[styles.inputGroup, { marginTop: 10 }]}>
+                <View style={[styles.otpWrapper, { borderBottomColor: COLORS.primary }]}>
+                  <Ionicons name="keypad" size={20} color={COLORS.primary} style={{ marginRight: 10 }} />
+                  <TextInput
+                    style={[styles.input, { flex: 1, color: COLORS.primary, letterSpacing: 8, fontWeight: '700' }]}
+                    placeholder="Enter 6-digit OTP"
+                    placeholderTextColor={COLORS.placeholderText}
+                    value={otp}
+                    onChangeText={setOtp}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                  />
+                </View>
+                <TouchableOpacity onPress={() => register(email)} style={{ marginTop: 8 }}>
+                   <Text style={{ color: COLORS.primary, fontSize: 13, fontWeight: '600', textAlign: 'right' }}>Resend OTP</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Password */}
             <View style={styles.inputGroup}>
               <View style={[styles.passwordWrapper, { borderBottomColor: COLORS.border }]}>
                 <TextInput
@@ -115,6 +176,7 @@ export default function Signup() {
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
+                  editable={!isEmailVerified}
                 />
                 <TouchableOpacity 
                   onPress={() => setShowPassword(!showPassword)}
@@ -130,6 +192,7 @@ export default function Signup() {
               </View>
             </View>
 
+            {/* Confirm Password */}
             <View style={styles.inputGroup}>
               <TextInput
                 style={[styles.input, { color: COLORS.textPrimary, borderBottomColor: COLORS.border }]}
@@ -138,18 +201,21 @@ export default function Signup() {
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry={!showPassword}
+                editable={!isEmailVerified}
               />
             </View>
 
             <TouchableOpacity 
-              style={[styles.signupBtn, { backgroundColor: COLORS.primary }]}
-              onPress={handleSignUp}
+              style={[styles.signupBtn, { backgroundColor: isEmailVerified ? COLORS.primary : (showOtpInput ? COLORS.primary : COLORS.primary) }]}
+              onPress={handleAction}
               disabled={isLoading}
             >
               {isLoading ? (
                 <ActivityIndicator color="#FFF" />
               ) : (
-                <Text style={styles.signupBtnText}>Sign up</Text>
+                <Text style={styles.signupBtnText}>
+                  {!showOtpInput ? "Verify Email" : (isEmailVerified ? "Success" : "Confirm OTP & Sign Up")}
+                </Text>
               )}
             </TouchableOpacity>
           </View>
@@ -220,6 +286,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     height: 55,
     borderBottomWidth: 1,
+  },
+  otpWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 60,
+    borderBottomWidth: 2,
+    marginTop: 5,
   },
   signupBtn: {
     height: 55,

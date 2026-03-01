@@ -29,21 +29,13 @@ const generateUniqueUsername = async (fullName) => {
   return username;
 };
 
-// -- Register new user --
+// -- Step 1: Request OTP for new registration --
 const registerUser = async (req, res) => {
   try {
-    const { fullName, email, password } = req.body;
+    const { email } = req.body;
 
-    if (!fullName || !email || !password) {
-      return res.status(400).json({ success: false, error: 'All fields are required' });
-    }
-
-    if (fullName.length < 3) {
-      return res.status(400).json({ success: false, error: 'Name must be at least 3 characters' });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({ success: false, error: 'Password must be at least 6 characters' });
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email is required' });
     }
 
     const emailNormalized = email.toLowerCase().trim();
@@ -53,27 +45,23 @@ const registerUser = async (req, res) => {
       return res.status(409).json({ success: false, error: 'Email already exists and is verified' });
     }
 
-    // Generate unique username and OTP
+    // Generate 6-digit verification code
     const otp = generateOTP();
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    // Create or Update Pending Registration
-    // DO NOT hash here, let User model do it on final save to keep things consistent
-    // or hash here if you prefer. User model has a pre-save hook that will hash it on User.save()
-    // So if we save the plain password in PendingUser, it will be hashed when we finally create the User.
+    // Create or Update Pending Registration (Only email/otp at first)
     await PendingUser.findOneAndUpdate(
       { email: emailNormalized },
       { 
-        fullName, 
         email: emailNormalized, 
-        password, 
         otp, 
-        otpExpires 
+        otpExpires,
+        isEmailVerified: false // Ensure we reset if they had it before
       },
       { upsert: true, new: true }
     );
 
-    console.log(`[Auth] OTP generated for ${emailNormalized}: ${otp}`);
+    console.log(`[Auth] Registration OTP for ${emailNormalized}: ${otp}`);
 
     // Send the email
     const emailSent = await sendOTP(emailNormalized, otp, 'verification');
@@ -81,7 +69,7 @@ const registerUser = async (req, res) => {
     if (!emailSent.success) {
       return res.status(500).json({
         success: false,
-        error: `Failed to send verification email: ${emailSent.error || 'Unknown error'}. Please check your email address and try again.`,
+        error: `Failed to send verification email: ${emailSent.error}. Please check your email address and try again.`,
       });
     }
 
@@ -91,12 +79,12 @@ const registerUser = async (req, res) => {
       email: emailNormalized
     });
   } catch (error) {
-    console.error('[Register] Error:', error);
+    console.error('[RegisterOTP] Error:', error);
     res.status(500).json({ success: false, error: error.message || 'Internal server error' });
   }
 };
 
-// -- Verify Email OTP --
+// -- Step 2: Verify Registration OTP --
 const verifyEmail = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -107,7 +95,7 @@ const verifyEmail = async (req, res) => {
 
     const emailNormalized = email.toLowerCase().trim();
 
-    // 1. Find Pending data
+    // Find Pending data
     const pending = await PendingUser.findOne({ 
       email: emailNormalized,
       otp,
@@ -118,37 +106,70 @@ const verifyEmail = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Invalid or expired OTP' });
     }
 
-    // 2. Finalize registration: Create or Update User
-    let user = await User.findOne({ email: emailNormalized });
+    // Mark as verified but don't create user yet!
+    pending.isEmailVerified = true;
+    await pending.save();
 
+    res.status(200).json({
+      success: true,
+      message: 'Email verified successfully. You can now complete your registration.',
+    });
+  } catch (error) {
+    console.error('[VerifyRegistrationOTP] Error:', error);
+    res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+  }
+};
+
+// -- Step 3: Finalize Registration (Collect Name/Password) --
+const finalizeRegistration = async (req, res) => {
+  try {
+    const { email, fullName, password } = req.body;
+
+    if (!email || !fullName || !password) {
+      return res.status(400).json({ success: false, error: 'All fields are required' });
+    }
+
+    if (fullName.length < 3) return res.status(400).json({ success: false, error: 'Name must be at least 3 characters' });
+    if (password.length < 6) return res.status(400).json({ success: false, error: 'Password must be at least 6 characters' });
+
+    const emailNormalized = email.toLowerCase().trim();
+
+    // Must have a verified pending registration
+    const pending = await PendingUser.findOne({ email: emailNormalized, isEmailVerified: true });
+    
+    if (!pending) {
+      return res.status(403).json({ success: false, error: 'Please verify your email first.' });
+    }
+
+    // Now safe to create or update user
+    let user = await User.findOne({ email: emailNormalized });
+    
     if (!user) {
-      const username = await generateUniqueUsername(pending.fullName);
+      const username = await generateUniqueUsername(fullName);
       const profileImage = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
       
       user = new User({
-        fullName: pending.fullName,
+        fullName,
         username,
         email: emailNormalized,
-        password: pending.password,
+        password,
         profileImage,
         isVerified: true
       });
     } else {
-      user.fullName = pending.fullName;
-      user.password = pending.password;
+      user.fullName = fullName;
+      user.password = password;
       user.isVerified = true;
     }
 
     await user.save();
-    
-    // 3. Cleanup pending entry
     await PendingUser.deleteOne({ _id: pending._id });
 
     const token = generateToken(user._id);
 
-    res.status(200).json({
+    res.status(201).json({
       success: true,
-      message: 'Account created and verified successfully',
+      message: 'Registration complete!',
       token,
       user: {
         id: user._id,
@@ -160,7 +181,7 @@ const verifyEmail = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('[VerifyEmail] Error:', error);
+    console.error('[FinalizeRegistration] Error:', error);
     res.status(500).json({ success: false, error: error.message || 'Internal server error' });
   }
 };
@@ -422,4 +443,5 @@ export {
   forgotPassword,
   verifyResetOTP,
   resetPassword,
+  finalizeRegistration,
 };

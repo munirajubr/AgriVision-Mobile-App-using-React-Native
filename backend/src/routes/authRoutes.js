@@ -7,7 +7,8 @@ import {
   resendVerificationOTP, 
   forgotPassword, 
   verifyResetOTP, 
-  resetPassword
+  resetPassword,
+  finalizeRegistration
 } from '../controllers/authController.js';
 import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
@@ -35,6 +36,7 @@ const protect = async (req, res, next) => {
 
 router.post('/register', registerUser);
 router.post('/verify-email', verifyEmail);
+router.post('/finalize-registration', finalizeRegistration);
 router.post('/resend-otp', resendVerificationOTP);
 router.post('/login', loginUser);
 router.post('/forgot-password', forgotPassword);
