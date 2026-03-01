@@ -2,6 +2,10 @@ import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import cloudinary from '../lib/cloudinary.js';
+import { sendOTP } from '../lib/mail.js';
+
+// Helper to generate a 6-digit OTP
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 // Generate JWT token with expiry
 const generateToken = (userId) =>
@@ -42,29 +46,106 @@ const registerUser = async (req, res) => {
     }
 
     const emailNormalized = email.toLowerCase().trim();
+    let user = await User.findOne({ email: emailNormalized });
 
-    if (await User.findOne({ email: emailNormalized })) {
-      return res.status(409).json({ success: false, error: 'Email already exists' });
+    if (user) {
+      if (user.isVerified) {
+        return res.status(409).json({ success: false, error: 'Email already exists' });
+      } else {
+        // Update existing unverified user
+        const otp = generateOTP();
+        const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+        
+        user.fullName = fullName;
+        user.password = password; // Will be hashed by pre-save middleware
+        user.verificationOTP = otp;
+        user.verificationOTPExpires = otpExpires;
+        
+        await user.save();
+        await sendOTP(emailNormalized, otp, 'verification');
+        
+        return res.status(200).json({
+          success: true,
+          message: 'An unverified account already exists. A new verification code has been sent.',
+          email: emailNormalized
+        });
+      }
     }
 
     // Generate unique username
     const username = await generateUniqueUsername(fullName);
     const profileImage = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
 
-    const user = new User({
+    // Generate 6-digit verification code
+    const otp = generateOTP();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    user = new User({
       fullName,
       username,
       email: emailNormalized,
       password,
       profileImage,
+      isVerified: false,
+      verificationOTP: otp,
+      verificationOTPExpires: otpExpires,
     });
 
     await user.save();
 
-    const token = generateToken(user._id);
+    // Send the email
+    const emailSent = await sendOTP(emailNormalized, otp, 'verification');
+
+    if (!emailSent) {
+      // If email fails, we might still want to keep the user but inform them
+      // Or we could delete the user. Let's keep it for now but return a warning.
+      return res.status(201).json({
+        success: true,
+        message: 'Account created, but failed to send verification email. Please request a new code.',
+        email: emailNormalized
+      });
+    }
 
     res.status(201).json({
       success: true,
+      message: 'Verification code sent to your email.',
+      email: emailNormalized
+    });
+  } catch (error) {
+    console.error('Register error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+};
+
+// -- Verify Email OTP --
+const verifyEmail = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, error: 'Email and OTP are required' });
+    }
+
+    const user = await User.findOne({ 
+      email: email.toLowerCase().trim(),
+      verificationOTP: otp,
+      verificationOTPExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired OTP' });
+    }
+
+    user.isVerified = true;
+    user.verificationOTP = undefined;
+    user.verificationOTPExpires = undefined;
+    await user.save();
+
+    const token = generateToken(user._id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Email verified successfully',
       token,
       user: {
         id: user._id,
@@ -76,7 +157,30 @@ const registerUser = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Register error:', error);
+    console.error('Verify email error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+};
+
+// -- Resend Verification OTP --
+const resendVerificationOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, error: 'Email is required' });
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+    if (user.isVerified) return res.status(400).json({ success: false, error: 'Email already verified' });
+
+    const otp = generateOTP();
+    user.verificationOTP = otp;
+    user.verificationOTPExpires = new Date(Date.now() + 10 * 60 * 1000);
+    await user.save();
+
+    await sendOTP(user.email, otp, 'verification');
+
+    res.status(200).json({ success: true, message: 'New verification code sent' });
+  } catch (error) {
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 };
@@ -107,6 +211,15 @@ const loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    if (!user.isVerified) {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Email not verified', 
+        notVerified: true,
+        email: user.email 
+      });
     }
 
     const token = generateToken(user._id);
@@ -197,8 +310,86 @@ const setupProfile = async (req, res) => {
   }
 };
 
+// -- Forgot Password (Send OTP) --
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, error: 'Email is required' });
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+    const otp = generateOTP();
+    user.resetPasswordOTP = otp;
+    user.resetPasswordOTPExpires = new Date(Date.now() + 10 * 60 * 1000);
+    await user.save();
+
+    await sendOTP(user.email, otp, 'reset');
+
+    res.status(200).json({ success: true, message: 'Password reset code sent to your email' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+};
+
+// -- Verify Reset OTP --
+const verifyResetOTP = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ success: false, error: 'Email and OTP are required' });
+
+    const user = await User.findOne({
+      email: email.toLowerCase().trim(),
+      resetPasswordOTP: otp,
+      resetPasswordOTPExpires: { $gt: Date.now() }
+    });
+
+    if (!user) return res.status(400).json({ success: false, error: 'Invalid or expired OTP' });
+
+    res.status(200).json({ success: true, message: 'OTP verified successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+};
+
+// -- Reset Password --
+const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ success: false, error: 'All fields are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, error: 'Password must be at least 6 characters' });
+    }
+
+    const user = await User.findOne({
+      email: email.toLowerCase().trim(),
+      resetPasswordOTP: otp,
+      resetPasswordOTPExpires: { $gt: Date.now() }
+    });
+
+    if (!user) return res.status(400).json({ success: false, error: 'Invalid or expired OTP' });
+
+    user.password = newPassword;
+    user.resetPasswordOTP = undefined;
+    user.resetPasswordOTPExpires = undefined;
+    await user.save();
+
+    res.status(200).json({ success: true, message: 'Password reset successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+};
+
 export {
   registerUser,
   loginUser,
   setupProfile,
+  verifyEmail,
+  resendVerificationOTP,
+  forgotPassword,
+  verifyResetOTP,
+  resetPassword,
 };

@@ -13,6 +13,11 @@ const userSchema = new mongoose.Schema({
 
   profileImage: { type: String, default: '' },
   phone: { type: String, default: '' },
+  isVerified: { type: Boolean, default: false },
+  verificationOTP: { type: String },
+  verificationOTPExpires: { type: Date },
+  resetPasswordOTP: { type: String },
+  resetPasswordOTPExpires: { type: Date },
   farmLocation: { type: String, default: '' },
   farmSize: { type: String, default: '' },
   experience: { type: String, default: '' },

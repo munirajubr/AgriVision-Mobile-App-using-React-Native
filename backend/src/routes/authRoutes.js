@@ -1,5 +1,14 @@
 import express from 'express';
-import { registerUser, loginUser, setupProfile } from '../controllers/authController.js';
+import { 
+  registerUser, 
+  loginUser, 
+  setupProfile, 
+  verifyEmail, 
+  resendVerificationOTP, 
+  forgotPassword, 
+  verifyResetOTP, 
+  resetPassword 
+} from '../controllers/authController.js';
 import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
 
@@ -25,7 +34,12 @@ const protect = async (req, res, next) => {
 };
 
 router.post('/register', registerUser);
+router.post('/verify-email', verifyEmail);
+router.post('/resend-otp', resendVerificationOTP);
 router.post('/login', loginUser);
+router.post('/forgot-password', forgotPassword);
+router.post('/verify-reset-otp', verifyResetOTP);
+router.post('/reset-password', resetPassword);
 router.post('/setup', setupProfile);
 router.put('/profile', protect, setupProfile); // Adding PUT /profile with protection
 

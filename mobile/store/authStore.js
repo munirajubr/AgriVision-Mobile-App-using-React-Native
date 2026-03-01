@@ -24,11 +24,48 @@ export const useAuthStore = create((set, get) => ({
       if (!response.ok) throw new Error(data.error || data.message || "Register failed");
       await AsyncStorage.setItem("user", JSON.stringify(data.user));
       await AsyncStorage.setItem("token", data.token);
-      set({ user: data.user, token: data.token, isLoading: false });
-      return { success: true };
+      set({ isLoading: false });
+      return { success: true, message: data.message, email };
     } catch (error) {
       console.error("[Register] Error:", error);
       set({ isLoading: false });
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Verify Email
+  verifyEmail: async (email, otp) => {
+    set({ isLoading: true });
+    try {
+      const response = await fetch(`${API_URL}/api/auth/verify-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Verification failed");
+      await AsyncStorage.setItem("user", JSON.stringify(data.user));
+      await AsyncStorage.setItem("token", data.token);
+      set({ user: data.user, token: data.token, isLoading: false });
+      return { success: true };
+    } catch (error) {
+      set({ isLoading: false });
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Resend OTP
+  resendOTP: async (email) => {
+    try {
+      const response = await fetch(`${API_URL}/api/auth/resend-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Resend failed");
+      return { success: true, message: data.message };
+    } catch (error) {
       return { success: false, error: error.message };
     }
   },
@@ -53,6 +90,63 @@ export const useAuthStore = create((set, get) => ({
       return { success: true };
     } catch (error) {
       console.error("[Login] Error:", error);
+      set({ isLoading: false });
+      return { success: false, error: error.message, notVerified: error.message === 'Email not verified' };
+    }
+  },
+
+  // Forgot Password
+  forgotPassword: async (email) => {
+    set({ isLoading: true });
+    try {
+      const response = await fetch(`${API_URL}/api/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+      set({ isLoading: false });
+      if (!response.ok) throw new Error(data.error || "Request failed");
+      return { success: true, message: data.message };
+    } catch (error) {
+      set({ isLoading: false });
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Verify Reset OTP
+  verifyResetOTP: async (email, otp) => {
+    set({ isLoading: true });
+    try {
+      const response = await fetch(`${API_URL}/api/auth/verify-reset-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp }),
+      });
+      const data = await response.json();
+      set({ isLoading: false });
+      if (!response.ok) throw new Error(data.error || "OTP verification failed");
+      return { success: true };
+    } catch (error) {
+      set({ isLoading: false });
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Reset Password
+  resetPassword: async (email, otp, newPassword) => {
+    set({ isLoading: true });
+    try {
+      const response = await fetch(`${API_URL}/api/auth/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp, newPassword }),
+      });
+      const data = await response.json();
+      set({ isLoading: false });
+      if (!response.ok) throw new Error(data.error || "Password reset failed");
+      return { success: true, message: data.message };
+    } catch (error) {
       set({ isLoading: false });
       return { success: false, error: error.message };
     }

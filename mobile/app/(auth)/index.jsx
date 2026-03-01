@@ -37,9 +37,25 @@ export default function Login() {
       return;
     }
     const result = await login(identifier, password);
-
     if (!result.success) {
-      Alert.alert("Login Failed", result.error || "Unknown error");
+      if (result.notVerified) {
+        Alert.alert(
+          "Email Not Verified",
+          "Your email is not verified. Please verify your email to log in.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { 
+              text: "Verify Now", 
+              onPress: () => router.push({
+                pathname: "/(auth)/verify-email",
+                params: { email: result.email }
+              }) 
+            }
+          ]
+        );
+      } else {
+        Alert.alert("Login Failed", result.error || "Unknown error");
+      }
     }
   };
 
@@ -113,6 +129,12 @@ export default function Login() {
                   />
                 </TouchableOpacity>
               </View>
+              <TouchableOpacity 
+                style={styles.forgotPasswordContainer} 
+                onPress={() => router.push("/(auth)/forgot-password")}
+              >
+                <Text style={[styles.forgotPasswordText, { color: COLORS.primary }]}>Forgot Password?</Text>
+              </TouchableOpacity>
             </View>
 
             <TouchableOpacity
@@ -204,6 +226,15 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginBottom: 8,
     marginLeft: 4,
+  },
+  forgotPasswordContainer: {
+    alignSelf: 'flex-end',
+    marginTop: 8,
+    marginRight: 4,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   inputWrapper: {
     flexDirection: "row",

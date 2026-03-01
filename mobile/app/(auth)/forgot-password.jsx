@@ -7,7 +7,6 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  SafeAreaView,
   Alert,
   StyleSheet,
   Dimensions,
@@ -22,32 +21,27 @@ import SafeScreen from "../../components/SafeScreen";
 
 const { width } = Dimensions.get("window");
 
-export default function Signup() {
-  const [fullName, setFullName] = useState("");
+export default function ForgotPassword() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-
   const { isDarkMode } = useThemeStore();
   const COLORS = getColors(isDarkMode);
-  const { isLoading, register } = useAuthStore();
+  const { isLoading, forgotPassword } = useAuthStore();
   const router = useRouter();
 
-  const handleSignUp = async () => {
-    if (!fullName || !email || !password) {
-      Alert.alert("Error", "Please fill in all fields.");
+  const handleRequestOTP = async () => {
+    if (!email) {
+      Alert.alert("Error", "Please enter your email address.");
       return;
     }
 
-    const result = await register(fullName, email, password);
+    const result = await forgotPassword(email);
 
-    if (!result.success) {
-      Alert.alert("Error", result.error);
+    if (result.success) {
+      Alert.alert("Code Sent", "If an account exists with this email, you will receive a reset code.", [
+        { text: "OK", onPress: () => router.push({ pathname: "/(auth)/reset-password", params: { email } }) }
+      ]);
     } else {
-      router.push({
-        pathname: "/(auth)/verify-email",
-        params: { email: result.email }
-      });
+      Alert.alert("Error", result.error);
     }
   };
 
@@ -61,10 +55,8 @@ export default function Signup() {
           contentContainerStyle={[styles.scrollContainer, { backgroundColor: COLORS.background }]}
           showsVerticalScrollIndicator={false}
         >
-          {/* Decorative Elements */}
           <View style={[styles.circle1, { backgroundColor: COLORS.primary + "08" }]} />
-          <View style={[styles.circle2, { backgroundColor: COLORS.primary + "05" }]} />
-
+          
           <View style={styles.topSection}>
             <TouchableOpacity 
               onPress={() => router.back()} 
@@ -73,35 +65,15 @@ export default function Signup() {
               <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
             </TouchableOpacity>
             <View style={[styles.iconContainer, { backgroundColor: `${COLORS.primary}15` }]}>
-              <Ionicons name="person-add" size={32} color={COLORS.primary} />
+              <Ionicons name="lock-open" size={32} color={COLORS.primary} />
             </View>
-            <Text style={[styles.title, { color: COLORS.textPrimary }]}>Create Account</Text>
+            <Text style={[styles.title, { color: COLORS.textPrimary }]}>Forgot Password</Text>
             <Text style={[styles.subtitle, { color: COLORS.textSecondary }]}>
-              Start your journey with AgriVision today
+              Enter your email to receive a password reset code
             </Text>
           </View>
 
           <View style={styles.formContainer}>
-            <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: COLORS.textTertiary }]}>FULL NAME</Text>
-              <View style={[styles.inputWrapper, { backgroundColor: COLORS.cardBackground }]}>
-                <Ionicons
-                  name="person-outline"
-                  size={20}
-                  color={COLORS.primary}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={[styles.input, { color: COLORS.textPrimary }]}
-                  placeholder="John Doe"
-                  placeholderTextColor={COLORS.textTertiary}
-                  value={fullName}
-                  onChangeText={setFullName}
-                  autoCapitalize="words"
-                />
-              </View>
-            </View>
-
             <View style={styles.inputGroup}>
               <Text style={[styles.inputLabel, { color: COLORS.textTertiary }]}>EMAIL ADDRESS</Text>
               <View style={[styles.inputWrapper, { backgroundColor: COLORS.cardBackground }]}>
@@ -123,39 +95,9 @@ export default function Signup() {
               </View>
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: COLORS.textTertiary }]}>PASSWORD</Text>
-              <View style={[styles.inputWrapper, { backgroundColor: COLORS.cardBackground }]}>
-                <Ionicons
-                  name="lock-closed-outline"
-                  size={20}
-                  color={COLORS.primary}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={[styles.input, { color: COLORS.textPrimary }]}
-                  placeholder="Min. 6 characters"
-                  placeholderTextColor={COLORS.textTertiary}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                />
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                  style={styles.eyeIcon}
-                >
-                  <Ionicons
-                    name={showPassword ? "eye-outline" : "eye-off-outline"}
-                    size={20}
-                    color={COLORS.textTertiary}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
             <TouchableOpacity
               style={[styles.button, { backgroundColor: COLORS.primary }]}
-              onPress={handleSignUp}
+              onPress={handleRequestOTP}
               disabled={isLoading}
               activeOpacity={0.8}
             >
@@ -163,18 +105,11 @@ export default function Signup() {
                 <ActivityIndicator color="#fff" />
               ) : (
                 <>
-                  <Text style={[styles.buttonText, { color: isDarkMode ? COLORS.black : COLORS.white }]}>Sign Up</Text>
-                  <Ionicons name="checkmark-circle" size={20} color={isDarkMode ? COLORS.black : COLORS.white} style={styles.btnIcon} />
+                  <Text style={[styles.buttonText, { color: isDarkMode ? COLORS.black : COLORS.white }]}>Send Code</Text>
+                  <Ionicons name="send" size={20} color={isDarkMode ? COLORS.black : COLORS.white} style={styles.btnIcon} />
                 </>
               )}
             </TouchableOpacity>
-
-            <View style={styles.footer}>
-              <Text style={[styles.footerText, { color: COLORS.textSecondary }]}>Already have an account?</Text>
-              <TouchableOpacity onPress={() => router.back()}>
-                <Text style={[styles.link, { color: COLORS.primary }]}>Sign In</Text>
-              </TouchableOpacity>
-            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -194,14 +129,6 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-  },
-  circle2: {
-    position: "absolute",
-    top: 200,
-    right: -100,
-    width: 250,
-    height: 250,
-    borderRadius: 125,
   },
   topSection: {
     marginTop: 20,
@@ -270,9 +197,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
   },
-  eyeIcon: {
-    padding: 8,
-  },
   button: {
     height: 60,
     borderRadius: 20,
@@ -287,19 +211,5 @@ const styles = StyleSheet.create({
   },
   btnIcon: {
     marginLeft: 10,
-  },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 30,
-    gap: 8,
-    marginBottom: 40,
-  },
-  footerText: {
-    fontSize: 15,
-  },
-  link: {
-    fontSize: 15,
-    fontWeight: "700",
   },
 });
