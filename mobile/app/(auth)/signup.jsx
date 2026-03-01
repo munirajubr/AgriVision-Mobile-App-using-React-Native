@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -11,19 +11,13 @@ import {
   StyleSheet,
   Dimensions,
   ScrollView,
-  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
 import { getColors } from "../../constants/colors";
 import { useThemeStore } from "../../store/themeStore";
 import { useAuthStore } from "../../store/authStore";
 import SafeScreen from "../../components/SafeScreen";
-
-// Required for web browser to work
-WebBrowser.maybeCompleteAuthSession();
 
 const { width } = Dimensions.get("window");
 
@@ -36,53 +30,8 @@ export default function Signup() {
 
   const { isDarkMode } = useThemeStore();
   const COLORS = getColors(isDarkMode);
-  const { isLoading, register, continueWithGoogle } = useAuthStore();
+  const { isLoading, register } = useAuthStore();
   const router = useRouter();
-
-  // Google Login Hook
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    androidClientId: "YOUR_ANDROID_CLIENT_ID",
-    iosClientId: "YOUR_IOS_CLIENT_ID",
-    webClientId: "YOUR_WEB_CLIENT_ID",
-  });
-
-  useEffect(() => {
-    if (response?.type === 'success') {
-      const { authentication } = response;
-      handleGoogleSuccess(authentication.accessToken);
-    }
-  }, [response]);
-
-  const handleGoogleSuccess = async (token) => {
-    try {
-      const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const userInfo = await res.json();
-      
-      const result = await continueWithGoogle({
-        email: userInfo.email,
-        fullName: userInfo.name,
-        sub: userInfo.sub,
-        picture: userInfo.picture
-      });
-
-      if (result.success) {
-        if (result.needsVerification) {
-          router.push({
-            pathname: "/verify-email",
-            params: { email: result.email }
-          });
-        } else {
-          router.replace("/(tabs)");
-        }
-      } else {
-        Alert.alert("Error", result.error);
-      }
-    } catch (e) {
-      Alert.alert("Google Signup Error", "Failed to get user data from Google");
-    }
-  };
 
   const handleSignUp = async () => {
     if (!fullName || !email || !password || !confirmPassword) {
@@ -195,30 +144,11 @@ export default function Signup() {
                 <Text style={styles.signupBtnText}>Sign up</Text>
               )}
             </TouchableOpacity>
-
-            <View style={styles.divider}>
-              <View style={[styles.line, { backgroundColor: COLORS.border }]} />
-              <Text style={[styles.dividerText, { color: COLORS.textSecondary }]}>Or sign up with</Text>
-              <View style={[styles.line, { backgroundColor: COLORS.border }]} />
-            </View>
-
-            <TouchableOpacity 
-              style={[styles.googleButton, { borderColor: COLORS.border, backgroundColor: "#FFF" }]}
-              onPress={() => promptAsync()}
-              disabled={!request}
-            >
-              <Image 
-                source={{ uri: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png" }} 
-                style={styles.googleIcon} 
-                resizeMode="contain"
-              />
-              <Text style={[styles.googleButtonText, { color: "#000" }]}>Continue with Google</Text>
-            </TouchableOpacity>
           </View>
 
           <View style={styles.footer}>
             <Text style={[styles.footerText, { color: COLORS.textSecondary }]}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => router.replace("/")}>
+            <TouchableOpacity onPress={() => router.push("/login")}>
               <Text style={[styles.signinLink, { color: COLORS.primary }]}>Sign in</Text>
             </TouchableOpacity>
           </View>
@@ -299,42 +229,6 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 16,
     fontWeight: "800",
-  },
-  divider: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 15,
-    marginVertical: 35,
-  },
-  line: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  googleButton: {
-    height: 60,
-    borderRadius: 12,
-    borderWidth: 1,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 12,
-    marginTop: 10,
-    ...Platform.select({
-      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5 },
-      android: { elevation: 2 },
-    }),
-  },
-  googleIcon: {
-    width: 24,
-    height: 24,
-  },
-  googleButtonText: {
-    fontSize: 16,
-    fontWeight: "700",
   },
   footer: {
     flexDirection: "row",

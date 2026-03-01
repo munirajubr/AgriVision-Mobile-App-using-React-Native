@@ -1,41 +1,50 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   Dimensions,
   FlatList,
   Animated,
   StatusBar,
+  SafeAreaView,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getColors } from '../constants/colors';
 import { useThemeStore } from '../store/themeStore';
-import SafeScreen from '../components/SafeScreen';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const SLIDES = [
   {
     id: '1',
-    title: 'Instant Crop Care',
-    description: 'Use your camera to find plant diseases and get the right medicine for your crops.',
+    title: 'Smart Crop Diagnosis',
+    description: 'Instantly identify plant diseases and get expert recommendations for sustainable farming.',
     icon: 'scan-outline',
+    bgColor: '#1B5E20', // Deep Forest Green
+    accent: '+120 Points',
+    label: 'Online',
   },
   {
     id: '2',
-    title: 'Soil & Farm Monitor',
-    description: 'Watch your farm moisture and temperature anywhere, anytime from your phone.',
+    title: 'Precision Farm Monitoring',
+    description: 'Keep a virtual eye on soil moisture and climate conditions from anywhere in the world.',
     icon: 'stats-chart-outline',
+    bgColor: '#2E7D32', // Medium Green
+    accent: '850 Points',
+    label: 'Gift Card',
   },
   {
     id: '3',
-    title: 'Better Market Prices',
-    description: 'Check daily mandi rates and follow our guides to get the best harvest.',
+    title: 'Direct Market Insights',
+    description: 'Access real-time mandi rates and connect with better opportunities for your harvest.',
     icon: 'leaf-outline',
+    bgColor: '#43A047', // Vibrant Green
+    accent: 'Swap to Profit',
+    label: 'Market',
   },
 ];
 
@@ -48,18 +57,6 @@ const Onboarding = () => {
   const scrollX = useRef(new Animated.Value(0)).current;
   const slidesRef = useRef(null);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      if (currentIndex < SLIDES.length - 1) {
-        slidesRef.current?.scrollToIndex({ index: currentIndex + 1 });
-      } else {
-        slidesRef.current?.scrollToIndex({ index: 0 });
-      }
-    }, 5000);
-
-    return () => clearInterval(timer);
-  }, [currentIndex]);
-
   const viewableItemsChanged = useRef(({ viewableItems }) => {
     if (viewableItems && viewableItems.length > 0) {
       setCurrentIndex(viewableItems[0].index);
@@ -68,179 +65,276 @@ const Onboarding = () => {
 
   const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
-  const renderItem = ({ item }) => (
-    <View style={styles.slide}>
-      <View style={[styles.iconContainer, { backgroundColor: `${COLORS.primary}10` }]}>
-        <Ionicons name={item.icon} size={100} color={COLORS.primary} />
-      </View>
-      <View style={styles.textContainer}>
-        <Text style={[styles.title, { color: COLORS.textPrimary }]}>{item.title}</Text>
-        <Text style={[styles.description, { color: COLORS.textSecondary }]}>{item.description}</Text>
-      </View>
-    </View>
-  );
+  const scrollToNext = () => {
+    if (currentIndex < SLIDES.length - 1) {
+      slidesRef.current?.scrollToIndex({ index: currentIndex + 1 });
+    } else {
+      router.replace('/signup');
+    }
+  };
 
-  return (
-    <SafeScreen>
-      <View style={[styles.container, { backgroundColor: COLORS.background }]}>
-        <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-        
-        {/* Decorative Background */}
-        <View style={[styles.circle, { backgroundColor: COLORS.primary + '05', top: -100, right: -100, width: 300, height: 300 }]} />
-        <View style={[styles.circle, { backgroundColor: COLORS.primary + '03', bottom: 100, left: -50, width: 200, height: 200 }]} />
-
-        <View style={styles.topSection}>
-          <Text style={[styles.logo, { color: COLORS.primary }]}>AgriVision</Text>
-        </View>
-
-        <FlatList
-          data={SLIDES}
-          renderItem={renderItem}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          pagingEnabled
-          bounces={false}
-          keyExtractor={(item) => item.id}
-          onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
-            useNativeDriver: false,
-          })}
-          onViewableItemsChanged={viewableItemsChanged}
-          viewabilityConfig={viewConfig}
-          ref={slidesRef}
-        />
-
-        <View style={styles.footer}>
-          <View style={styles.paginator}>
-            {SLIDES.map((_, i) => {
-              const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
-              const dotWidth = scrollX.interpolate({
-                inputRange,
-                outputRange: [8, 24, 8],
-                extrapolate: 'clamp',
-              });
-              const opacity = scrollX.interpolate({
-                inputRange,
-                outputRange: [0.3, 1, 0.3],
-                extrapolate: 'clamp',
-              });
-              return (
-                <Animated.View
-                  key={i.toString()}
-                  style={[styles.dot, { width: dotWidth, opacity, backgroundColor: COLORS.primary }]}
-                />
-              );
-            })}
+  const renderItem = ({ item, index }) => {
+    return (
+      <View style={[styles.slide, { width }]}>
+        {/* Top Section - Illustration/Graphic */}
+        <View style={[styles.topSection, { backgroundColor: item.bgColor }]}>
+          {/* Decorative Spirals (Styled Views to mimic the image style) */}
+          <View style={styles.spiralContainer}>
+            <View style={[styles.circleOutline, { width: 150, height: 150, top: 40, left: 30 }]} />
+            <View style={[styles.circleOutline, { width: 180, height: 180, top: 20, right: 20 }]} />
+            <View style={[styles.circleOutline, { width: 120, height: 120, bottom: 40, left: '25%' }]} />
           </View>
 
-          <TouchableOpacity
-            style={[styles.button, { backgroundColor: COLORS.primary }]}
-            onPress={() => router.replace('/signup')}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.buttonText}>Get Started</Text>
-            <Ionicons name="arrow-forward" size={20} color="#fff" />
-          </TouchableOpacity>
+          {/* Floating UI elements mimicking the image */}
+          <View style={[styles.floatingTag, { top: 60, left: 30, transform: [{ rotate: '-15deg' }] }]}>
+            <Text style={styles.tagText}>{item.accent}</Text>
+          </View>
 
-          <TouchableOpacity 
-            style={styles.loginLink}
-            onPress={() => router.push('/(auth)')}
-          >
-            <Text style={[styles.loginLinkText, { color: COLORS.textPrimary }]}>
-              Already have an account? <Text style={{ color: COLORS.primary, fontWeight: '800' }}>Login</Text>
-            </Text>
-          </TouchableOpacity>
+          <View style={[styles.tabBar, { top: 180, alignSelf: 'center' }]}>
+            <View style={[styles.tab, { backgroundColor: '#FFF' }]}>
+              <Ionicons name="globe-outline" size={14} color={item.bgColor} />
+              <Text style={[styles.tabText, { color: item.bgColor }]}>{item.label}</Text>
+            </View>
+            <View style={styles.tab}>
+              <Ionicons name="cart-outline" size={14} color="#FFF" />
+              <Text style={styles.tabText}>Farm</Text>
+            </View>
+          </View>
+
+          {/* Central Icon */}
+          <Animated.View style={styles.mainIconContainer}>
+            <Ionicons name={item.icon} size={120} color="#FFF" style={{ opacity: 0.9 }} />
+          </Animated.View>
+
+          {/* Happy Character (Mimicking the image bottom creature) */}
+          <View style={[styles.character, { bottom: -20, right: 30 }]}>
+            <View style={[styles.characterBody, { backgroundColor: '#FFD1DA' }]} />
+            <View style={styles.characterFace}>
+              <Text style={styles.characterEyes}>..</Text>
+              <Text style={styles.characterMouth}>◡</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Bottom Section - Content */}
+        <View style={styles.bottomSection}>
+          <View style={styles.textContainer}>
+            <Text style={[styles.title, { color: '#000' }]}>{item.title}</Text>
+            <Text style={[styles.description, { color: '#666' }]}>{item.description}</Text>
+          </View>
+
+          <View style={styles.footer}>
+            <View style={styles.paginator}>
+              {SLIDES.map((_, i) => (
+                <View
+                  key={i.toString()}
+                  style={[
+                    styles.dot,
+                    { 
+                      backgroundColor: i === currentIndex ? item.bgColor : '#DDD',
+                      width: i === currentIndex ? 20 : 8 
+                    }
+                  ]}
+                />
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={[styles.nextBtn, { backgroundColor: item.bgColor }]}
+              onPress={scrollToNext}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="arrow-forward" size={24} color="#FFF" />
+            </TouchableOpacity>
+          </View>
+
+          {currentIndex === SLIDES.length - 1 && (
+            <TouchableOpacity 
+              style={styles.loginLink}
+              onPress={() => router.push('/login')}
+            >
+              <Text style={styles.loginLinkText}>
+                Already have an account? <Text style={{ color: item.bgColor, fontWeight: '800' }}>Login</Text>
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
-    </SafeScreen>
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <FlatList
+        data={SLIDES}
+        renderItem={renderItem}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        pagingEnabled
+        bounces={false}
+        keyExtractor={(item) => item.id}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
+          useNativeDriver: false,
+        })}
+        onViewableItemsChanged={viewableItemsChanged}
+        viewabilityConfig={viewConfig}
+        ref={slidesRef}
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  circle: {
-    position: 'absolute',
-    borderRadius: 150,
-  },
-  topSection: {
-    height: 80,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  logo: {
-    fontSize: 28,
-    fontWeight: '900',
-    letterSpacing: -1,
+    backgroundColor: '#FFF',
   },
   slide: {
-    width,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 40,
+    flex: 1,
   },
-  iconContainer: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+  topSection: {
+    height: '60%',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 40,
+    overflow: 'hidden',
+  },
+  spiralContainer: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.2,
+  },
+  circleOutline: {
+    position: 'absolute',
+    borderWidth: 2,
+    borderColor: '#FFF',
+    borderRadius: 1000,
+  },
+  floatingTag: {
+    position: 'absolute',
+    backgroundColor: '#FFF',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  tagText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  tabBar: {
+    position: 'absolute',
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    padding: 4,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  tab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 5,
+  },
+  tabText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  mainIconContainer: {
+    zIndex: 10,
+  },
+  character: {
+    position: 'absolute',
+    width: 140,
+    height: 140,
+  },
+  characterBody: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 70,
+  },
+  characterFace: {
+    position: 'absolute',
+    top: 30,
+    left: 40,
+    alignItems: 'center',
+  },
+  characterEyes: {
+    fontSize: 30,
+    fontWeight: '900',
+    color: '#333',
+    lineHeight: 30,
+  },
+  characterMouth: {
+    fontSize: 24,
+    color: '#333',
+    marginTop: -10,
+  },
+  bottomSection: {
+    height: '40%',
+    backgroundColor: '#FFF',
+    padding: 30,
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    marginTop: -40,
+    justifyContent: 'space-between',
   },
   textContainer: {
-    alignItems: 'center',
+    marginTop: 10,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '800',
-    textAlign: 'center',
-    marginBottom: 16,
+    fontSize: 32,
+    fontWeight: '900',
+    marginBottom: 15,
     letterSpacing: -0.5,
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
   },
   description: {
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: 20,
-    opacity: 0.7,
+    fontSize: 17,
+    lineHeight: 26,
+    opacity: 0.8,
   },
   footer: {
-    paddingHorizontal: 40,
-    paddingBottom: 40,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 20,
   },
   paginator: {
     flexDirection: 'row',
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
+    gap: 8,
   },
   dot: {
-    height: 6,
-    borderRadius: 3,
-    marginHorizontal: 4,
+    height: 8,
+    borderRadius: 4,
   },
-  button: {
-    height: 60,
-    borderRadius: 18,
-    flexDirection: 'row',
+  nextBtn: {
+    width: 65,
+    height: 65,
+    borderRadius: 33,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '800',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
   },
   loginLink: {
-    marginTop: 20,
     alignItems: 'center',
+    marginBottom: 10,
   },
   loginLinkText: {
     fontSize: 15,
     fontWeight: '600',
+    color: '#666',
   },
 });
 
