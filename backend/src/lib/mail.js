@@ -3,11 +3,19 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false, // Use STARTTLS
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  // Force IPv4
+  address: "smtp.gmail.com",
+  family: 4,
+  tls: {
+    rejectUnauthorized: true,
+  }
 });
 
 // Verify connection configuration
