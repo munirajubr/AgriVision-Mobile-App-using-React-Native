@@ -1,4 +1,4 @@
-import * as Notifications from 'expo-notifications';
+// import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
@@ -6,19 +6,22 @@ import { Platform } from 'react-native';
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 // Configure how notifications are handled when the app is open
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+// Notifications.setNotificationHandler({
+//   handleNotification: async () => ({
+//     shouldShowAlert: true,
+//     shouldPlaySound: true,
+//     shouldSetBadge: false,
+//   }),
+// });
 
 /**
  * Register the device for push notifications
  * Returns the Expo Push Token
  */
 export async function registerForPushNotificationsAsync() {
+  console.log('Push notifications are currently disabled.');
+  return null;
+  /*
   let token;
 
   if (isExpoGo) {
@@ -59,12 +62,15 @@ export async function registerForPushNotificationsAsync() {
   }
 
   return token;
+  */
 }
 
 /**
  * Schedule a local notification
  */
 export async function scheduleNotification(title, body, data = {}) {
+  console.log('Notification suppressed:', title, body);
+  /*
   try {
     await Notifications.scheduleNotificationAsync({
       content: {
@@ -78,4 +84,5 @@ export async function scheduleNotification(title, body, data = {}) {
   } catch (error) {
     console.error('Error scheduling local notification:', error);
   }
+  */
 }
