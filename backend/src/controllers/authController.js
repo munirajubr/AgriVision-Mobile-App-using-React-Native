@@ -61,6 +61,7 @@ const registerUser = async (req, res) => {
         user.verificationOTP = otp;
         user.verificationOTPExpires = otpExpires;
         
+        console.log(`[Auth] Updating existing unverified user: ${emailNormalized}`);
         await user.save();
         await sendOTP(emailNormalized, otp, 'verification');
         
@@ -91,6 +92,7 @@ const registerUser = async (req, res) => {
       verificationOTPExpires: otpExpires,
     });
 
+    console.log(`[Auth] Registering new user: ${emailNormalized}`);
     await user.save();
 
     // Send the email
@@ -324,6 +326,7 @@ const forgotPassword = async (req, res) => {
     user.resetPasswordOTPExpires = new Date(Date.now() + 10 * 60 * 1000);
     await user.save();
 
+    console.log(`[Auth] Sending forgot password OTP to: ${user.email}`);
     await sendOTP(user.email, otp, 'reset');
 
     res.status(200).json({ success: true, message: 'Password reset code sent to your email' });

@@ -47,7 +47,7 @@ export default function Login() {
             { 
               text: "Verify Now", 
               onPress: () => router.push({
-                pathname: "/(auth)/verify-email",
+                pathname: "/verify-email",
                 params: { email: result.email }
               }) 
             }

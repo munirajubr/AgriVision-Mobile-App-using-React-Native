@@ -41,12 +41,13 @@ export default function Signup() {
 
     const result = await register(fullName, email, password);
 
-    if (!result.success) {
+    if (!result.success && !result.email) {
       Alert.alert("Error", result.error);
     } else {
+      // Navigate to verification even if error but email is present (e.g. unverified account exists)
       router.push({
-        pathname: "/(auth)/verify-email",
-        params: { email: result.email }
+        pathname: "/verify-email",
+        params: { email: result.email || email }
       });
     }
   };

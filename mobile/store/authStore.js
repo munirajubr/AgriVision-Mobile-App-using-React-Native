@@ -21,15 +21,17 @@ export const useAuthStore = create((set, get) => ({
         const text = await response.text();
         throw new Error(text || "Invalid response");
       });
-      if (!response.ok) throw new Error(data.error || data.message || "Register failed");
-      await AsyncStorage.setItem("user", JSON.stringify(data.user));
-      await AsyncStorage.setItem("token", data.token);
+      if (!response.ok) {
+        const error = new Error(data.error || data.message || "Register failed");
+        error.email = data.email;
+        throw error;
+      }
       set({ isLoading: false });
-      return { success: true, message: data.message, email };
+      return { success: true, message: data.message, email: data.email || email };
     } catch (error) {
       console.error("[Register] Error:", error);
       set({ isLoading: false });
-      return { success: false, error: error.message };
+      return { success: false, error: error.message, email: error.email || email };
     }
   },
 
@@ -83,7 +85,11 @@ export const useAuthStore = create((set, get) => ({
         const text = await response.text();
         throw new Error(text || "Invalid response");
       });
-      if (!response.ok) throw new Error(data.error || data.message || "Login failed");
+      if (!response.ok) {
+        const error = new Error(data.error || data.message || "Login failed");
+        error.email = data.email;
+        throw error;
+      }
       await AsyncStorage.setItem("user", JSON.stringify(data.user));
       await AsyncStorage.setItem("token", data.token);
       set({ user: data.user, token: data.token, isLoading: false });
@@ -91,7 +97,14 @@ export const useAuthStore = create((set, get) => ({
     } catch (error) {
       console.error("[Login] Error:", error);
       set({ isLoading: false });
-      return { success: false, error: error.message, notVerified: error.message === 'Email not verified' };
+      
+      // If the error contains email (from not verified case), pass it back
+      return { 
+        success: false, 
+        error: error.message, 
+        notVerified: error.message === 'Email not verified',
+        email: error.email // We need to make sure this is available
+      };
     }
   },
 

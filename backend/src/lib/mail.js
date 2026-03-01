@@ -32,6 +32,7 @@ export const sendOTP = async (email, otp, type = 'verification') => {
   `;
 
   try {
+    console.log(`[Mail] Sending ${type} OTP to: ${email}`);
     const info = await transporter.sendMail({
       from: `"AgriVision Support" <${process.env.EMAIL_USER}>`,
       to: email,

@@ -145,7 +145,7 @@ export default function Setup() {
       >
         <PageHeader 
           title="Account Setup" 
-          hideBackButton 
+          showBack={false} 
           rightComponent={
             <TouchableOpacity onPress={handleSkip} style={styles.skipBtn}>
               <Text style={{ color: COLORS.primary, fontWeight: '700', fontSize: 16 }}>Skip</Text>
