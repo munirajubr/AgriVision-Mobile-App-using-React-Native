@@ -5,7 +5,7 @@ import { getDevices, addDevice, removeDevice } from "../controllers/deviceContro
 const router = express.Router();
 
 // NO AUTH — all routes open for testing
-router.get("/get", getDevices);
+router.post("/get", getDevices);
 router.post("/add", addDevice);
 router.delete("/remove", removeDevice);
 

@@ -123,6 +123,8 @@ export default function RootLayout() {
         <Stack.Screen name="index" /> 
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(pages)" />
+        <Stack.Screen name="(dashboard)" />
       </Stack>
       <StatusBar style={isDarkMode ? "light" : "dark"} backgroundColor={backgroundColor} />
     </SafeAreaProvider>

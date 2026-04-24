@@ -29,6 +29,9 @@ export default function PagesLayout() {
       <Stack.Screen name="diseasediagnosis" />
       <Stack.Screen name="editprofile" />
       <Stack.Screen name="growthblueprint" />
+      <Stack.Screen name="notifications" />
+      <Stack.Screen name="all-tools" />
+      <Stack.Screen name="privacypolicy" />
     </Stack>
   );
 }
