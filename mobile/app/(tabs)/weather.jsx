@@ -6,6 +6,7 @@ import { getColors } from '../../constants/colors';
 import { useThemeStore } from '../../store/themeStore';
 import { useAuthStore } from '../../store/authStore';
 import { useDashboardStore } from '../../store/dashboardStore';
+import { useToastStore } from '../../store/toastStore';
 import SafeScreen from '../../components/SafeScreen';
 
 const WEATHER_API_KEY = process.env.EXPO_PUBLIC_WEATHER_API_KEY;
@@ -14,6 +15,7 @@ const BASE_URL = 'https://api.weatherapi.com/v1';
 export default function WeatherScreen() {
   const { isDarkMode } = useThemeStore();
   const { user } = useAuthStore();
+  const { showToast } = useToastStore();
   const COLORS = getColors(isDarkMode);
   
   const [location, setLocation] = useState(user?.farmLocation || 'Bangalore');
@@ -59,7 +61,11 @@ export default function WeatherScreen() {
         setHourlyForecast(data.forecast.forecastday[0].hour.slice(h, h + 12).map(hr => ({ time: new Date(hr.time).getHours(), temp: Math.round(hr.temp_c), icon: getWeatherIcon(hr.condition.text) })));
         setWeeklyForecast(data.forecast.forecastday.map(day => ({ day: new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' }), high: Math.round(day.day.maxtemp_c), low: Math.round(day.day.mintemp_c), icon: getWeatherIcon(day.day.condition.text), cond: day.day.condition.text })));
       }
-    } catch { Alert.alert('Error', 'Weather data unreachable.'); } finally { setLoading(false); }
+    } catch { 
+      showToast('Weather data unreachable', 'error'); 
+    } finally { 
+      setLoading(false); 
+    }
   }, [setWeatherData]);
 
   // Handle live location

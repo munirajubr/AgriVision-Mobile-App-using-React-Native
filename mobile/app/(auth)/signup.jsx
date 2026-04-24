@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -9,17 +9,16 @@ import {
   Platform,
   Alert,
   StyleSheet,
-  Dimensions,
   ScrollView,
+  Animated,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { getColors } from "../../constants/colors";
 import { useThemeStore } from "../../store/themeStore";
 import { useAuthStore } from "../../store/authStore";
+import { useToastStore } from "../../store/toastStore";
 import SafeScreen from "../../components/SafeScreen";
-
-const { width } = Dimensions.get("window");
 
 export default function Signup() {
   const [fullName, setFullName] = useState("");
@@ -27,64 +26,45 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [showOtpInput, setShowOtpInput] = useState(false);
-  const [isEmailVerified, setIsEmailVerified] = useState(false);
 
   const { isDarkMode } = useThemeStore();
   const COLORS = getColors(isDarkMode);
-  const { isLoading, register, verifyEmail, finalizeRegistration } = useAuthStore();
+  const { isLoading, register } = useAuthStore();
+  const { showToast } = useToastStore();
   const router = useRouter();
 
-  const handleAction = async () => {
-    // Phase 1: Request OTP
-    if (!showOtpInput) {
-      if (!fullName || !email || !password || !confirmPassword) {
-        Alert.alert("Error", "Please fill in all fields before verifying.");
-        return;
-      }
-      if (password !== confirmPassword) {
-        Alert.alert("Error", "Passwords do not match.");
-        return;
-      }
-      if (password.length < 6) {
-        Alert.alert("Error", "Password must be at least 6 characters.");
-        return;
-      }
+  // Simple fade in
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-      const result = await register(email);
+  useEffect(() => {
+    Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
+  }, []);
 
-      if (result.success) {
-        setShowOtpInput(true);
-        Alert.alert("OTP Sent", "A 6-digit code has been sent to your email.");
-      } else {
-        Alert.alert("Error", result.error);
-      }
+  const handleSignup = async () => {
+    if (!fullName || !email || !password || !confirmPassword) {
+      showToast("Please fill in all fields", "error");
+      return;
+    }
+    if (password !== confirmPassword) {
+      showToast("Passwords do not match", "error");
+      return;
+    }
+    if (password.length < 6) {
+      showToast("Password too weak", "error");
       return;
     }
 
-    // Phase 2: Verify & Finalize
-    if (!isEmailVerified) {
-      if (otp.length !== 6) {
-        Alert.alert("Error", "Please enter the 6-digit OTP.");
-        return;
-      }
+    const result = await register(email);
 
-      const verifyResult = await verifyEmail(email, otp);
-      if (verifyResult.success) {
-        setIsEmailVerified(true);
-        // Automatically try to finalize
-        const finalizeResult = await finalizeRegistration(email, fullName, password);
-        if (finalizeResult.success) {
-          Alert.alert("Success", "Account created successfully!", [
-            { text: "Continue", onPress: () => router.replace("/(auth)/setup") }
-          ]);
-        } else {
-          Alert.alert("Error", finalizeResult.error);
-        }
-      } else {
-        Alert.alert("Error", verifyResult.error);
-      }
+    if (result.success) {
+      // Navigate to the dedicated verification page
+      router.push({
+        pathname: "/(auth)/signup-verify",
+        params: { email, fullName, password },
+      });
+      showToast("OTP sent successfully", "success");
+    } else {
+      showToast(result.error || "Signup failed", "error");
     }
   };
 
@@ -94,138 +74,126 @@ export default function Signup() {
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={[styles.container, { backgroundColor: COLORS.background }]}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          {/* Back Button */}
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
-          </TouchableOpacity>
-
-          {/* Top Logo Section */}
-          <View style={styles.header}>
-            <View style={styles.logoRow}>
-              <View style={[styles.logoIconCircle, { backgroundColor: COLORS.primary }]}>
-                <Ionicons name="leaf" size={28} color="#FFF" />
-              </View>
-              <Text style={[styles.logoText, { color: COLORS.primary }]}>AgriVision</Text>
-            </View>
-            <Text style={[styles.subTitle, { color: COLORS.textPrimary }]}>
-              {isEmailVerified ? "Registration Complete!" : "Create your Account"}
-            </Text>
-          </View>
-
-          {/* Form Section */}
-          <View style={styles.form}>
-            {/* Full Name */}
-            <View style={styles.inputGroup}>
-              <TextInput
-                style={[styles.input, { color: COLORS.textPrimary, borderBottomColor: COLORS.border }]}
-                placeholder="Full Name"
-                placeholderTextColor={COLORS.placeholderText}
-                value={fullName}
-                onChangeText={setFullName}
-                autoCapitalize="words"
-                editable={!isEmailVerified}
-              />
-            </View>
-
-            {/* Email */}
-            <View style={styles.inputGroup}>
-              <TextInput
-                style={[styles.input, { color: COLORS.textPrimary, borderBottomColor: COLORS.border }]}
-                placeholder="Email Address"
-                placeholderTextColor={COLORS.placeholderText}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                editable={!showOtpInput}
-              />
-            </View>
-
-            {/* OTP Input - Visible after sending */}
-            {showOtpInput && !isEmailVerified && (
-              <View style={[styles.inputGroup, { marginTop: 10 }]}>
-                <View style={[styles.otpWrapper, { borderBottomColor: COLORS.primary }]}>
-                  <Ionicons name="keypad" size={20} color={COLORS.primary} style={{ marginRight: 10 }} />
-                  <TextInput
-                    style={[styles.input, { flex: 1, color: COLORS.primary, letterSpacing: 8, fontWeight: '700' }]}
-                    placeholder="Enter 6-digit OTP"
-                    placeholderTextColor={COLORS.placeholderText}
-                    value={otp}
-                    onChangeText={setOtp}
-                    keyboardType="number-pad"
-                    maxLength={6}
-                  />
-                </View>
-                <TouchableOpacity onPress={() => register(email)} style={{ marginTop: 8 }}>
-                   <Text style={{ color: COLORS.primary, fontSize: 13, fontWeight: '600', textAlign: 'right' }}>Resend OTP</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* Password */}
-            <View style={styles.inputGroup}>
-              <View style={[styles.passwordWrapper, { borderBottomColor: COLORS.border }]}>
-                <TextInput
-                  style={[styles.input, { flex: 1, color: COLORS.textPrimary, borderBottomWidth: 0 }]}
-                  placeholder="Password"
-                  placeholderTextColor={COLORS.placeholderText}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                  editable={!isEmailVerified}
-                />
-                <TouchableOpacity 
-                  onPress={() => setShowPassword(!showPassword)}
-                  hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-                  style={{ padding: 8 }}
-                >
-                  <Ionicons 
-                    name={showPassword ? "eye" : "eye-off"} 
-                    size={22} 
-                    color={showPassword ? COLORS.primary : COLORS.textTertiary} 
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Confirm Password */}
-            <View style={styles.inputGroup}>
-              <TextInput
-                style={[styles.input, { color: COLORS.textPrimary, borderBottomColor: COLORS.border }]}
-                placeholder="Confirm Password"
-                placeholderTextColor={COLORS.placeholderText}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry={!showPassword}
-                editable={!isEmailVerified}
-              />
-            </View>
-
-            <TouchableOpacity 
-              style={[styles.signupBtn, { backgroundColor: isEmailVerified ? COLORS.primary : (showOtpInput ? COLORS.primary : COLORS.primary) }]}
-              onPress={handleAction}
-              disabled={isLoading}
+          <Animated.View style={{ opacity: fadeAnim }}>
+            {/* Back Button */}
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={[styles.backBtn, { backgroundColor: COLORS.cardBackground }]}
             >
-              {isLoading ? (
-                <ActivityIndicator color="#FFF" />
-              ) : (
-                <Text style={styles.signupBtnText}>
-                  {!showOtpInput ? "Verify Email" : (isEmailVerified ? "Success" : "Confirm OTP & Sign Up")}
-                </Text>
-              )}
+              <Ionicons name="chevron-back" size={22} color={COLORS.textPrimary} />
             </TouchableOpacity>
-          </View>
 
-          <View style={styles.footer}>
-            <Text style={[styles.footerText, { color: COLORS.textSecondary }]}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => router.push("/login")}>
-              <Text style={[styles.signinLink, { color: COLORS.primary }]}>Sign in</Text>
-            </TouchableOpacity>
-          </View>
+            {/* Logo & Header */}
+            <View style={styles.header}>
+              <View style={[styles.logoCircle, { backgroundColor: COLORS.primary }]}>
+                <Ionicons name="leaf" size={32} color="#FFF" />
+              </View>
+              <Text style={[styles.headerTitle, { color: COLORS.textPrimary }]}>Create Account</Text>
+              <Text style={[styles.headerSubtitle, { color: COLORS.textTertiary }]}>
+                Join thousands of smart farmers
+              </Text>
+            </View>
+
+            {/* Form */}
+            <View style={styles.form}>
+              {/* Full Name */}
+              <View style={styles.inputGroup}>
+                <TextInput
+                  style={[styles.input, { color: COLORS.textPrimary, borderBottomColor: COLORS.border }]}
+                  placeholder="Full Name"
+                  placeholderTextColor={COLORS.placeholderText}
+                  value={fullName}
+                  onChangeText={setFullName}
+                  autoCapitalize="words"
+                />
+              </View>
+
+              {/* Email */}
+              <View style={styles.inputGroup}>
+                <TextInput
+                  style={[styles.input, { color: COLORS.textPrimary, borderBottomColor: COLORS.border }]}
+                  placeholder="Email Address"
+                  placeholderTextColor={COLORS.placeholderText}
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+
+              {/* Password */}
+              <View style={styles.inputGroup}>
+                <View style={[styles.passwordWrapper, { borderBottomColor: COLORS.border }]}>
+                  <TextInput
+                    style={[styles.input, { color: COLORS.textPrimary, flex: 1, borderBottomWidth: 0 }]}
+                    placeholder="Password"
+                    placeholderTextColor={COLORS.placeholderText}
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                    style={{ padding: 8 }}
+                  >
+                    <Ionicons
+                      name={showPassword ? "eye" : "eye-off"}
+                      size={20}
+                      color={showPassword ? COLORS.primary : COLORS.textTertiary}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Confirm Password */}
+              <View style={styles.inputGroup}>
+                <TextInput
+                  style={[styles.input, { color: COLORS.textPrimary, borderBottomColor: COLORS.border }]}
+                  placeholder="Confirm Password"
+                  placeholderTextColor={COLORS.placeholderText}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry={!showPassword}
+                />
+              </View>
+
+              {/* Signup Button */}
+              <TouchableOpacity
+                style={[styles.signupBtn, { backgroundColor: COLORS.primary }]}
+                onPress={handleSignup}
+                disabled={isLoading}
+                activeOpacity={0.85}
+              >
+                {isLoading ? (
+                  <View style={styles.loadingRow}>
+                    <ActivityIndicator color="#FFF" />
+                    <Text style={styles.signupBtnText}>Sending OTP...</Text>
+                  </View>
+                ) : (
+                  <View style={styles.loadingRow}>
+                    <Text style={styles.signupBtnText}>Continue</Text>
+                    <Ionicons name="arrow-forward" size={20} color="#FFF" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            {/* Footer */}
+            <View style={styles.footer}>
+              <Text style={[styles.footerText, { color: COLORS.textSecondary }]}>
+                Already have an account?{" "}
+              </Text>
+              <TouchableOpacity onPress={() => router.push("/login")}>
+                <Text style={[styles.signinLink, { color: COLORS.primary }]}>Sign in</Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeScreen>
@@ -235,45 +203,58 @@ export default function Signup() {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    paddingHorizontal: 25,
-    paddingTop: 20,
+    paddingHorizontal: 24,
+    paddingTop: 16,
     paddingBottom: 30,
   },
   backBtn: {
-    marginBottom: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+    ...Platform.select({
+      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8 },
+      android: { elevation: 2 },
+    }),
   },
   header: {
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 36,
   },
-  logoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 20,
-  },
-  logoIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+  logoCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
+    marginBottom: 20,
+    ...Platform.select({
+      ios: { shadowColor: "#2E7D32", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.25, shadowRadius: 12 },
+      android: { elevation: 6 },
+    }),
   },
-  logoText: {
+  headerTitle: {
     fontSize: 28,
     fontWeight: "900",
-    letterSpacing: -1,
+    letterSpacing: -0.5,
+    marginBottom: 6,
   },
-  subTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginTop: 10,
+  headerSubtitle: {
+    fontSize: 15,
+    fontWeight: "500",
   },
   form: {
     width: "100%",
   },
   inputGroup: {
-    marginBottom: 15,
+    marginBottom: 14,
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
   },
   input: {
     height: 55,
@@ -287,28 +268,26 @@ const styles = StyleSheet.create({
     height: 55,
     borderBottomWidth: 1,
   },
-  otpWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    height: 60,
-    borderBottomWidth: 2,
-    marginTop: 5,
-  },
   signupBtn: {
     height: 55,
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 25,
+    marginTop: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
   },
+  loadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
   signupBtnText: {
     color: "#FFF",
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "800",
   },
   footer: {
@@ -323,6 +302,6 @@ const styles = StyleSheet.create({
   },
   signinLink: {
     fontSize: 15,
-    fontWeight: "700",
+    fontWeight: "800",
   },
 });

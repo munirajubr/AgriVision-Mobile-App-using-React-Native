@@ -15,13 +15,7 @@ export default function ProfileScreen() {
   const COLORS = getColors(isDarkMode);
 
   if (!user) {
-    return (
-      <SafeScreen>
-        <View style={[styles.centered, { backgroundColor: COLORS.background }]}>
-          <Text style={[styles.errorText, { color: COLORS.error }]}>User not found.</Text>
-        </View>
-      </SafeScreen>
-    );
+    return null;
   }
 
   const handleRateApp = () => Alert.alert("Rate App", "Thank you for your feedback!");
@@ -67,6 +61,7 @@ export default function ProfileScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
+
           {/* Custom Profile Section */}
           <View style={styles.profileHero}>
             <View style={[styles.avatarBox, { backgroundColor: COLORS.primary, borderWidth: 0 }]}>

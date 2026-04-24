@@ -1,186 +1,295 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Dimensions,
-  FlatList,
   Animated,
   StatusBar,
-  SafeAreaView,
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getColors } from '../constants/colors';
-import { useThemeStore } from '../store/themeStore';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 
 const SLIDES = [
   {
     id: '1',
-    title: 'Smart Crop Diagnosis',
-    description: 'Instantly identify plant diseases and get expert recommendations for sustainable farming.',
+    title: 'Smart Crop\nDiagnosis',
+    description: 'Instantly identify plant diseases with AI and get expert recommendations for sustainable farming.',
     icon: 'scan-outline',
-    bgColor: '#1B5E20', // Deep Forest Green
-    accent: '+120 Points',
-    label: 'Online',
+    gradient: ['#0D4F1C', '#1B7A2D', '#28A745'],
+    accentIcon: 'leaf',
+    particles: ['🌿', '🍃', '🌱'],
   },
   {
     id: '2',
-    title: 'Precision Farm Monitoring',
-    description: 'Keep a virtual eye on soil moisture and climate conditions from anywhere in the world.',
+    title: 'Precision Farm\nMonitoring',
+    description: 'Track soil moisture, temperature and climate conditions from anywhere — in real time.',
     icon: 'stats-chart-outline',
-    bgColor: '#2E7D32', // Medium Green
-    accent: '850 Points',
-    label: 'Gift Card',
+    gradient: ['#0A3D5C', '#1565C0', '#1E88E5'],
+    accentIcon: 'analytics',
+    particles: ['📊', '🌡️', '💧'],
   },
   {
     id: '3',
-    title: 'Direct Market Insights',
-    description: 'Access real-time mandi rates and connect with better opportunities for your harvest.',
-    icon: 'leaf-outline',
-    bgColor: '#43A047', // Vibrant Green
-    accent: 'Swap to Profit',
-    label: 'Market',
+    title: 'Market\nInsights',
+    description: 'Access live mandi prices and discover the best selling opportunities for your harvest.',
+    icon: 'trending-up-outline',
+    gradient: ['#4A1A6B', '#7B1FA2', '#AB47BC'],
+    accentIcon: 'cash',
+    particles: ['📈', '💰', '🌾'],
   },
 ];
 
 const Onboarding = () => {
   const router = useRouter();
-  const { isDarkMode } = useThemeStore();
-  const COLORS = getColors(isDarkMode);
-  
   const [currentIndex, setCurrentIndex] = useState(0);
-  const scrollX = useRef(new Animated.Value(0)).current;
-  const slidesRef = useRef(null);
 
-  const viewableItemsChanged = useRef(({ viewableItems }) => {
-    if (viewableItems && viewableItems.length > 0) {
-      setCurrentIndex(viewableItems[0].index);
-    }
-  }).current;
+  // Content fade / slide animations
+  const contentFade = useRef(new Animated.Value(0)).current;
+  const contentSlide = useRef(new Animated.Value(30)).current;
+  const iconScale = useRef(new Animated.Value(0.3)).current;
+  const iconRotate = useRef(new Animated.Value(0)).current;
 
-  const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
+  // Background gradient transition
+  const bgFade = useRef(new Animated.Value(1)).current;
+
+  // Floating particle animations (looping)
+  const float1 = useRef(new Animated.Value(0)).current;
+  const float2 = useRef(new Animated.Value(0)).current;
+  const float3 = useRef(new Animated.Value(0)).current;
+
+  // Button pulse
+  const buttonPulse = useRef(new Animated.Value(1)).current;
+
+  // Start looping animations once
+  useEffect(() => {
+    const createFloat = (anim, duration) => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(anim, { toValue: 1, duration, useNativeDriver: true }),
+          Animated.timing(anim, { toValue: 0, duration, useNativeDriver: true }),
+        ])
+      ).start();
+    };
+    createFloat(float1, 3000);
+    createFloat(float2, 2500);
+    createFloat(float3, 3500);
+
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(buttonPulse, { toValue: 1.06, duration: 1200, useNativeDriver: true }),
+        Animated.timing(buttonPulse, { toValue: 1, duration: 1200, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+
+  // Animate content in
+  const animateIn = useCallback(() => {
+    contentFade.setValue(0);
+    contentSlide.setValue(30);
+    iconScale.setValue(0.3);
+    iconRotate.setValue(0);
+
+    Animated.parallel([
+      Animated.timing(contentFade, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.spring(contentSlide, { toValue: 0, tension: 60, friction: 9, useNativeDriver: true }),
+      Animated.spring(iconScale, { toValue: 1, tension: 70, friction: 5, useNativeDriver: true }),
+      Animated.timing(iconRotate, { toValue: 1, duration: 600, useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  // Animate content out, then switch, then animate in
+  const transitionTo = useCallback((nextIndex) => {
+    // Fade out current content
+    Animated.parallel([
+      Animated.timing(contentFade, { toValue: 0, duration: 200, useNativeDriver: true }),
+      Animated.timing(contentSlide, { toValue: -20, duration: 200, useNativeDriver: true }),
+      Animated.timing(iconScale, { toValue: 0.6, duration: 200, useNativeDriver: true }),
+    ]).start(() => {
+      setCurrentIndex(nextIndex);
+      animateIn();
+    });
+  }, [animateIn]);
+
+  // Initial entrance
+  useEffect(() => {
+    animateIn();
+  }, []);
 
   const scrollToNext = () => {
     if (currentIndex < SLIDES.length - 1) {
-      slidesRef.current?.scrollToIndex({ index: currentIndex + 1 });
+      transitionTo(currentIndex + 1);
     } else {
       router.replace('/signup');
     }
   };
 
-  const renderItem = ({ item, index }) => {
-    return (
-      <View style={[styles.slide, { width }]}>
-        {/* Top Section - Illustration/Graphic */}
-        <View style={[styles.topSection, { backgroundColor: item.bgColor }]}>
-          {/* Decorative Spirals (Styled Views to mimic the image style) */}
-          <View style={styles.spiralContainer}>
-            <View style={[styles.circleOutline, { width: 150, height: 150, top: 40, left: 30 }]} />
-            <View style={[styles.circleOutline, { width: 180, height: 180, top: 20, right: 20 }]} />
-            <View style={[styles.circleOutline, { width: 120, height: 120, bottom: 40, left: '25%' }]} />
+  const item = SLIDES[currentIndex];
+
+  const spinIcon = iconRotate.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+
+      {/* Background — render all gradients, only active one is visible */}
+      {SLIDES.map((slide, i) => (
+        <Animated.View
+          key={slide.id}
+          style={[StyleSheet.absoluteFill, {
+            opacity: i === currentIndex ? 1 : 0,
+            zIndex: i === currentIndex ? 1 : 0,
+          }]}
+          pointerEvents="none"
+        >
+          <LinearGradient
+            colors={slide.gradient}
+            style={styles.gradientBg}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          />
+        </Animated.View>
+      ))}
+
+      {/* Top Hero Area */}
+      <View style={styles.topSection}>
+        {/* Decorative circles */}
+        <View style={styles.decorContainer}>
+          <View style={[styles.decorCircle, { width: 300, height: 300, top: -80, right: -80, opacity: 0.06 }]} />
+          <View style={[styles.decorCircle, { width: 200, height: 200, bottom: 40, left: -60, opacity: 0.05 }]} />
+          <View style={[styles.decorCircle, { width: 150, height: 150, top: 100, left: 60, opacity: 0.04 }]} />
+        </View>
+
+        {/* Floating particles */}
+        <Animated.Text style={[styles.particle, {
+          top: '15%', left: '10%',
+          transform: [{ translateY: float1.interpolate({ inputRange: [0, 1], outputRange: [0, -20] }) }],
+          opacity: float1.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.4, 0.8, 0.4] }),
+        }]}>{item.particles[0]}</Animated.Text>
+
+        <Animated.Text style={[styles.particle, {
+          top: '25%', right: '12%', fontSize: 28,
+          transform: [{ translateY: float2.interpolate({ inputRange: [0, 1], outputRange: [0, -15] }) }],
+          opacity: float2.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.3, 0.7, 0.3] }),
+        }]}>{item.particles[1]}</Animated.Text>
+
+        <Animated.Text style={[styles.particle, {
+          bottom: '20%', left: '20%', fontSize: 22,
+          transform: [{ translateY: float3.interpolate({ inputRange: [0, 1], outputRange: [0, -18] }) }],
+          opacity: float3.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.3, 0.6, 0.3] }),
+        }]}>{item.particles[2]}</Animated.Text>
+
+        {/* Central Icon — fades in with scale + rotation */}
+        <Animated.View style={[styles.iconWrapper, {
+          opacity: contentFade,
+          transform: [
+            { scale: iconScale },
+            { rotate: spinIcon },
+          ],
+        }]}>
+          <View style={styles.iconGlow}>
+            <Ionicons name={item.icon} size={100} color="rgba(255,255,255,0.95)" />
+          </View>
+        </Animated.View>
+
+        {/* Mini floating badge */}
+        <Animated.View style={[styles.floatingBadge, {
+          opacity: contentFade,
+          transform: [{ translateY: float1.interpolate({ inputRange: [0, 1], outputRange: [0, -8] }) }],
+        }]}>
+          <Ionicons name={item.accentIcon} size={16} color="#FFF" />
+          <Text style={styles.badgeText}>AgriVision AI</Text>
+        </Animated.View>
+      </View>
+
+      {/* Bottom Content Card */}
+      <View style={styles.bottomSection}>
+        {/* Text content — fades in with slide */}
+        <Animated.View style={[styles.textContainer, {
+          opacity: contentFade,
+          transform: [{ translateY: contentSlide }],
+        }]}>
+          <Text style={styles.slideTitle}>{item.title}</Text>
+          <Text style={styles.slideDescription}>{item.description}</Text>
+        </Animated.View>
+
+        {/* Navigation Footer */}
+        <View style={styles.navFooter}>
+          {/* Dots — static, no animation needed */}
+          <View style={styles.dotsContainer}>
+            {SLIDES.map((_, i) => (
+              <TouchableOpacity
+                key={i}
+                onPress={() => { if (i !== currentIndex) transitionTo(i); }}
+                activeOpacity={0.7}
+              >
+                <View style={[
+                  styles.dot,
+                  {
+                    backgroundColor: item.gradient[1],
+                    width: i === currentIndex ? 28 : 8,
+                    opacity: i === currentIndex ? 1 : 0.3,
+                  },
+                ]} />
+              </TouchableOpacity>
+            ))}
           </View>
 
-          {/* Floating UI elements mimicking the image */}
-          <View style={[styles.floatingTag, { top: 60, left: 30, transform: [{ rotate: '-15deg' }] }]}>
-            <Text style={styles.tagText}>{item.accent}</Text>
-          </View>
+          {/* Nav Buttons */}
+          <View style={styles.navButtons}>
+            {currentIndex > 0 ? (
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => transitionTo(currentIndex - 1)}
+                activeOpacity={0.6}
+              >
+                <Ionicons name="arrow-back" size={22} color="#AAAAAA" />
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.backButtonPlaceholder} />
+            )}
 
-          <View style={[styles.tabBar, { top: 180, alignSelf: 'center' }]}>
-            <View style={[styles.tab, { backgroundColor: '#FFF' }]}>
-              <Ionicons name="globe-outline" size={14} color={item.bgColor} />
-              <Text style={[styles.tabText, { color: item.bgColor }]}>{item.label}</Text>
-            </View>
-            <View style={styles.tab}>
-              <Ionicons name="cart-outline" size={14} color="#FFF" />
-              <Text style={styles.tabText}>Farm</Text>
-            </View>
-          </View>
-
-          {/* Central Icon */}
-          <Animated.View style={styles.mainIconContainer}>
-            <Ionicons name={item.icon} size={120} color="#FFF" style={{ opacity: 0.9 }} />
-          </Animated.View>
-
-          {/* Happy Character (Mimicking the image bottom creature) */}
-          <View style={[styles.character, { bottom: -20, right: 30 }]}>
-            <View style={[styles.characterBody, { backgroundColor: '#FFD1DA' }]} />
-            <View style={styles.characterFace}>
-              <Text style={styles.characterEyes}>..</Text>
-              <Text style={styles.characterMouth}>◡</Text>
-            </View>
+            {/* Next Button */}
+            <Animated.View style={{ transform: [{ scale: buttonPulse }] }}>
+              <TouchableOpacity
+                style={[styles.nextButton, { backgroundColor: item.gradient[1] }]}
+                onPress={scrollToNext}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name={currentIndex === SLIDES.length - 1 ? "rocket-outline" : "arrow-forward"}
+                  size={26}
+                  color="#FFF"
+                />
+              </TouchableOpacity>
+            </Animated.View>
           </View>
         </View>
 
-        {/* Bottom Section - Content */}
-        <View style={styles.bottomSection}>
-          <View style={styles.textContainer}>
-            <Text style={[styles.title, { color: '#000' }]}>{item.title}</Text>
-            <Text style={[styles.description, { color: '#666' }]}>{item.description}</Text>
-          </View>
-
-          <View style={styles.footer}>
-            <View style={styles.paginator}>
-              {SLIDES.map((_, i) => (
-                <View
-                  key={i.toString()}
-                  style={[
-                    styles.dot,
-                    { 
-                      backgroundColor: i === currentIndex ? item.bgColor : '#DDD',
-                      width: i === currentIndex ? 20 : 8 
-                    }
-                  ]}
-                />
-              ))}
-            </View>
-
-            <TouchableOpacity
-              style={[styles.nextBtn, { backgroundColor: item.bgColor }]}
-              onPress={scrollToNext}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="arrow-forward" size={24} color="#FFF" />
+        {/* Skip / Login Link */}
+        <View style={styles.bottomLinks}>
+          {currentIndex < SLIDES.length - 1 && (
+            <TouchableOpacity onPress={() => router.replace('/signup')}>
+              <Text style={styles.skipText}>Skip</Text>
             </TouchableOpacity>
-          </View>
-
+          )}
           {currentIndex === SLIDES.length - 1 && (
-            <TouchableOpacity 
-              style={styles.loginLink}
-              onPress={() => router.push('/login')}
-            >
-              <Text style={styles.loginLinkText}>
-                Already have an account? <Text style={{ color: item.bgColor, fontWeight: '800' }}>Login</Text>
+            <TouchableOpacity onPress={() => router.push('/login')}>
+              <Text style={styles.loginText}>
+                Already have an account? <Text style={[styles.loginHighlight, { color: item.gradient[1] }]}>Login</Text>
               </Text>
             </TouchableOpacity>
           )}
         </View>
       </View>
-    );
-  };
-
-  return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      <FlatList
-        data={SLIDES}
-        renderItem={renderItem}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        pagingEnabled
-        bounces={false}
-        keyExtractor={(item) => item.id}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
-          useNativeDriver: false,
-        })}
-        onViewableItemsChanged={viewableItemsChanged}
-        viewabilityConfig={viewConfig}
-        ref={slidesRef}
-      />
     </View>
   );
 };
@@ -188,153 +297,154 @@ const Onboarding = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: '#000',
   },
-  slide: {
+  gradientBg: {
     flex: 1,
   },
   topSection: {
-    height: '60%',
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
+    position: 'relative',
+    zIndex: 2,
   },
-  spiralContainer: {
+  decorContainer: {
     ...StyleSheet.absoluteFillObject,
-    opacity: 0.2,
   },
-  circleOutline: {
+  decorCircle: {
     position: 'absolute',
-    borderWidth: 2,
-    borderColor: '#FFF',
-    borderRadius: 1000,
-  },
-  floatingTag: {
-    position: 'absolute',
+    borderRadius: 999,
     backgroundColor: '#FFF',
-    paddingHorizontal: 15,
+  },
+  particle: {
+    position: 'absolute',
+    fontSize: 32,
+    zIndex: 5,
+  },
+  iconWrapper: {
+    zIndex: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconGlow: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  floatingBadge: {
+    position: 'absolute',
+    bottom: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  tagText: {
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  tabBar: {
-    position: 'absolute',
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    padding: 4,
-    borderRadius: 25,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    borderColor: 'rgba(255,255,255,0.1)',
   },
-  tab: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 5,
-  },
-  tabText: {
+  badgeText: {
     color: '#FFF',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
-  },
-  mainIconContainer: {
-    zIndex: 10,
-  },
-  character: {
-    position: 'absolute',
-    width: 140,
-    height: 140,
-  },
-  characterBody: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 70,
-  },
-  characterFace: {
-    position: 'absolute',
-    top: 30,
-    left: 40,
-    alignItems: 'center',
-  },
-  characterEyes: {
-    fontSize: 30,
-    fontWeight: '900',
-    color: '#333',
-    lineHeight: 30,
-  },
-  characterMouth: {
-    fontSize: 24,
-    color: '#333',
-    marginTop: -10,
+    letterSpacing: 0.5,
   },
   bottomSection: {
-    height: '40%',
+    height: height * 0.40,
     backgroundColor: '#FFF',
-    padding: 30,
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    marginTop: -40,
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
+    paddingHorizontal: 30,
+    paddingTop: 36,
     justifyContent: 'space-between',
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+    zIndex: 3,
   },
   textContainer: {
-    marginTop: 10,
+    flex: 1,
+    justifyContent: 'center',
   },
-  title: {
-    fontSize: 32,
+  slideTitle: {
+    fontSize: 34,
     fontWeight: '900',
-    marginBottom: 15,
-    letterSpacing: -0.5,
-    fontFamily: 'serif',
+    color: '#111',
+    letterSpacing: -1,
+    lineHeight: 40,
+    marginBottom: 14,
   },
-  description: {
-    fontSize: 17,
-    lineHeight: 26,
-    opacity: 0.8,
+  slideDescription: {
+    fontSize: 16,
+    color: '#777',
+    lineHeight: 24,
+    fontWeight: '500',
   },
-  footer: {
+  navFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingBottom: 20,
+    marginBottom: 10,
   },
-  paginator: {
+  dotsContainer: {
     flexDirection: 'row',
     gap: 8,
+    alignItems: 'center',
   },
   dot: {
     height: 8,
     borderRadius: 4,
   },
-  nextBtn: {
-    width: 65,
-    height: 65,
-    borderRadius: 33,
+  nextButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 10,
   },
-  loginLink: {
+  navButtons: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    gap: 14,
   },
-  loginLinkText: {
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backButtonPlaceholder: {
+    width: 44,
+    height: 44,
+  },
+  bottomLinks: {
+    alignItems: 'center',
+    minHeight: 30,
+  },
+  skipText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#666',
+    color: '#999',
+  },
+  loginText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#888',
+  },
+  loginHighlight: {
+    fontWeight: '800',
   },
 });
 

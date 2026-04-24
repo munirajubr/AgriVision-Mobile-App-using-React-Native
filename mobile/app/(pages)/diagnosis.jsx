@@ -16,14 +16,15 @@ import { useRouter } from "expo-router";
 import { getColors } from "../../constants/colors";
 import { useThemeStore } from "../../store/themeStore";
 import SafeScreen from "../../components/SafeScreen";
-import PageHeader from "../../components/PageHeader";
 import { scheduleNotification } from "../../utils/notifications";
+import { useToastStore } from "../../store/toastStore";
 
 const BASE_URL = "https://eggplant-disease-detection-model.onrender.com"; 
 
 export default function PlantAnalysisScreen() {
   const router = useRouter();
   const { isDarkMode } = useThemeStore();
+  const { showToast } = useToastStore();
   const COLORS = getColors(isDarkMode);
 
   const [selectedImage, setSelectedImage] = useState(null);
@@ -35,7 +36,7 @@ export default function PlantAnalysisScreen() {
     const { status: camera } = await ImagePicker.requestCameraPermissionsAsync();
     const { status: media } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (camera !== "granted" || media !== "granted") {
-      Alert.alert("Permission Required", "Camera and gallery access are needed.");
+      showToast("Camera and gallery access are needed.", "error");
       return false;
     }
     return true;
@@ -51,7 +52,7 @@ export default function PlantAnalysisScreen() {
         setSelectedImageData(res.assets[0].base64);
         setAnalysisResult(null);
       }
-    } catch (err) { Alert.alert("Error", "Could not access image."); }
+    } catch (err) { showToast("Could not access image.", "error"); }
   };
 
   const submitForAnalysis = async () => {
@@ -71,12 +72,14 @@ export default function PlantAnalysisScreen() {
         recommendations: data.disease_info?.recommendations || ["Regular monitoring is advised."]
       });
       
+      showToast("Analysis Complete!", "success");
+
       // Trigger notification
       scheduleNotification(
         "Diagnosis Complete",
         `Plant condition identified as: ${data.prediction?.class || "Healthy"}`
       );
-    } catch (err) { Alert.alert("Fail", "Server is busy. Please try again later."); } finally { setIsAnalyzing(false); }
+    } catch (err) { showToast("Server is busy. Please try again later.", "error"); } finally { setIsAnalyzing(false); }
   };
 
   return (

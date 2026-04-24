@@ -16,6 +16,7 @@ import { useRouter } from "expo-router";
 import { getColors } from "../../constants/colors";
 import { useThemeStore } from "../../store/themeStore";
 import { useAuthStore } from "../../store/authStore";
+import { useToastStore } from "../../store/toastStore";
 import SafeScreen from "../../components/SafeScreen";
 import PageHeader from "../../components/PageHeader";
 import { Ionicons } from "@expo/vector-icons";
@@ -45,6 +46,7 @@ export default function Setup() {
   const { isDarkMode } = useThemeStore();
   const COLORS = getColors(isDarkMode);
   const { user, isLoading, setupProfile } = useAuthStore();
+  const { showToast } = useToastStore();
 
   const [phone, setPhone] = useState("");
   const [farmLocation, setFarmLocation] = useState("");
@@ -129,11 +131,10 @@ export default function Setup() {
     const result = await setupProfile(details);
 
     if (result.success) {
-      Alert.alert("Success", "Profile setup complete!", [
-        { text: "Great", onPress: () => router.replace("/(tabs)") }
-      ]);
+      showToast("Profile setup complete!", "success");
+      setTimeout(() => router.replace("/(tabs)"), 1500);
     } else {
-      Alert.alert("Error", result.error || "Failed to setup profile");
+      showToast(result.error || "Failed to setup profile", "error");
     }
   };
 

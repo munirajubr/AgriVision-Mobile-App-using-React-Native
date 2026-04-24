@@ -19,6 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { getColors } from '../../constants/colors';
 import { useThemeStore } from '../../store/themeStore';
 import { useAuthStore } from '../../store/authStore';
+import { useToastStore } from '../../store/toastStore';
 import SafeScreen from '../../components/SafeScreen';
 import PageHeader from '../../components/PageHeader';
 
@@ -44,6 +45,7 @@ export default function EditProfile() {
   const router = useRouter();
   const { isDarkMode } = useThemeStore();
   const { user, updateProfile, isLoading } = useAuthStore();
+  const { showToast } = useToastStore();
   const COLORS = getColors(isDarkMode);
 
   const [formData, setFormData] = useState({
@@ -109,7 +111,7 @@ export default function EditProfile() {
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'Sorry, we need camera roll permissions!');
+      showToast('Permission Denied: Camera roll access required', 'error');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -127,9 +129,10 @@ export default function EditProfile() {
   const handleSave = async () => {
     const result = await updateProfile({ ...formData, profileImage });
     if (result.success) {
-      Alert.alert('Success', 'Profile updated successfully!', [{ text: 'OK', onPress: () => router.back() }]);
+      showToast('Profile updated successfully!', 'success');
+      setTimeout(() => router.back(), 2000);
     } else {
-      Alert.alert('Error', result.error || 'Failed to update profile');
+      showToast(result.error || 'Failed to update profile', 'error');
     }
   };
 

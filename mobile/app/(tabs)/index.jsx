@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Alert } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { getColors } from '../../constants/colors';
 import { useThemeStore } from '../../store/themeStore';
 import { useDashboardStore } from '../../store/dashboardStore';
@@ -34,26 +34,6 @@ export default function DashboardPage() {
   const COLORS = getColors(isDarkMode);
   const { activeTab, setActiveTab } = useDashboardStore();
   const { user } = useAuthStore();
-
-  useEffect(() => {
-    // Check if profile is incomplete
-    const isIncomplete = !user?.phone || !user?.farmLocation || !user?.farmSize;
-    
-    if (isIncomplete && user) {
-      // Small delay to ensure screen is mounted
-      const timer = setTimeout(() => {
-        Alert.alert(
-          "Complete Your Profile",
-          "Please take a moment to complete your profile for a better experience.",
-          [
-            { text: "Later", style: "cancel" },
-            { text: "Update Now", onPress: () => router.push("/(auth)/setup") }
-          ]
-        );
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [user]);
 
   const tabs = [
     { key: 'home', label: 'Overview' },

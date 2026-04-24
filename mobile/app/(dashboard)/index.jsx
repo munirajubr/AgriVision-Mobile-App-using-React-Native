@@ -18,6 +18,8 @@ export default function Home() {
   const { weatherData, setWeatherData } = useDashboardStore();
   const router = useRouter();
 
+  if (!user) return null;
+
   useEffect(() => {
     const fetchHomeWeather = async () => {
       const location = user?.farmLocation || 'Bangalore';

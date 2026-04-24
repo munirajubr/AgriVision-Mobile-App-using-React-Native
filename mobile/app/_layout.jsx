@@ -9,6 +9,7 @@ import { useAuthStore } from "../store/authStore";
 import { useThemeStore } from "../store/themeStore";
 import { useEffect, useState, useRef } from "react";
 import { getColors } from "../constants/colors";
+import Toast from "../components/Toast";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -91,16 +92,29 @@ export default function RootLayout() {
     if (!fontsLoaded || !appIsReady || isCheckingAuth) return;
 
     const inAuthGroup = segments[0] === "(auth)";
+    const inTabsGroup = segments[0] === "(tabs)";
+    const inDashboardGroup = segments[0] === "(dashboard)";
+    const inPagesGroup = segments[0] === "(pages)";
     const inRootIndex = segments.length === 0 || (segments.length === 1 && segments[0] === "index");
-    const isSignedIn = user && token;
+    
+    const isSignedIn = !!user && !!token;
 
     if (!isSignedIn) {
+      // If not signed in and not in auth/root, go to onboarding/login
       if (!inAuthGroup && !inRootIndex) {
-        router.replace("/");
+        // Use a small delay to ensure the store has finished updating
+        const timer = setTimeout(() => {
+          router.replace("/");
+        }, 10);
+        return () => clearTimeout(timer);
       }
     } else {
+      // If signed in and in auth/root, go to tabs
       if (inAuthGroup || inRootIndex) {
-        router.replace("/(tabs)");
+        const timer = setTimeout(() => {
+          router.replace("/(tabs)");
+        }, 10);
+        return () => clearTimeout(timer);
       }
     }
   }, [user, token, segments, fontsLoaded, appIsReady, isCheckingAuth]);
@@ -127,6 +141,7 @@ export default function RootLayout() {
         <Stack.Screen name="(dashboard)" />
       </Stack>
       <StatusBar style={isDarkMode ? "light" : "dark"} backgroundColor={backgroundColor} />
+      <Toast />
     </SafeAreaProvider>
   );
 }

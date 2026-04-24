@@ -269,6 +269,9 @@ export const useAuthStore = create((set, get) => ({
     try {
       await AsyncStorage.removeItem("token");
       await AsyncStorage.removeItem("user");
+      // Use the store directly without hook
+      const { useToastStore } = require("./toastStore");
+      useToastStore.getState().showToast("Logged out successfully", "info");
     } catch (error) {
       console.error("[Logout] Error:", error);
     }
