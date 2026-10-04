@@ -1,132 +1,184 @@
 import React from "react";
-import { View, Text, ScrollView, TouchableOpacity, Alert, Linking, StyleSheet, Platform, Image } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  Linking,
+  StyleSheet,
+  Image,
+  Switch,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { getColors } from "../../constants/colors";
-import { useThemeStore } from "../../store/themeStore";
 import { useAuthStore } from "../../store/authStore";
-import ProfileHeader from "../../components/ProfileHeader";
 import SafeScreen from "../../components/SafeScreen";
 
+const COLORS_BASE = {
+  bg:        "#F7F8F7",
+  card:      "#FFFFFF",
+  border:    "#EEEFEE",
+  text:      "#111411",
+  sub:       "#8A9A8E",
+  accent:    "#1A4D2E",
+  lime:      "#C8F572",
+  red:       "#EF4444",
+};
+
+function TopBar({ title, onBack, rightIcon, onRight }) {
+  return (
+    <View style={tb.row}>
+      {onBack ? (
+        <TouchableOpacity style={tb.iconBtn} onPress={onBack} activeOpacity={0.7}>
+          <Ionicons name="chevron-back" size={20} color={COLORS_BASE.text} />
+        </TouchableOpacity>
+      ) : <View style={tb.iconBtn} />}
+
+      <Text style={tb.title}>{title}</Text>
+
+      {rightIcon ? (
+        <TouchableOpacity style={tb.iconBtn} onPress={onRight} activeOpacity={0.7}>
+          <Ionicons name={rightIcon} size={20} color={COLORS_BASE.text} />
+        </TouchableOpacity>
+      ) : <View style={tb.iconBtn} />}
+    </View>
+  );
+}
+
+const tb = StyleSheet.create({
+  row:    { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 14 },
+  title:  { fontSize: 17, fontWeight: "700", color: COLORS_BASE.text },
+  iconBtn:{ width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS_BASE.border, alignItems: "center", justifyContent: "center" },
+});
+
+// ─────────────────────────────────────────────
+//  PROFILE SCREEN
+// ─────────────────────────────────────────────
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
-  const { isDarkMode } = useThemeStore();
-  const COLORS = getColors(isDarkMode);
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
-  const handleRateApp = () => Alert.alert("Rate App", "Thank you for your feedback!");
-  const handleContactUs = () => Linking.openURL("mailto:support@agrivision.com?subject=Support Request");
-  const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
+  const firstName  = user.fullName?.split(" ")[0] || user.username || "Farmer";
+  const initial    = (user.fullName || user.username || "F").charAt(0).toUpperCase();
+
+  const handleLogout = () =>
+    Alert.alert("Sign Out", "Are you sure?", [
       { text: "Cancel", style: "cancel" },
-      { text: "Logout", style: "destructive", onPress: logout }
+      { text: "Sign Out", style: "destructive", onPress: logout },
     ]);
-  };
 
   const menuGroups = [
     {
-      title: "App Settings",
       items: [
-        { icon: "settings-outline", label: "General Settings", route: "/(pages)/settings", color: COLORS.primary },
-        { icon: "notifications-outline", label: "Notifications", route: "/(pages)/notifications", color: COLORS.warning },
-      ]
+        { icon: "settings-outline",        label: "Settings",           route: "/(pages)/settings" },
+        { icon: "notifications-outline",   label: "Notifications",      route: "/(pages)/notifications" },
+        { icon: "shield-checkmark-outline",label: "Privacy Policy",     route: "/(pages)/privacypolicy" },
+        { icon: "help-circle-outline",     label: "Help & Support",     route: "/(pages)/helpsupport" },
+      ],
     },
     {
-      title: "Support & Legal",
       items: [
-        { icon: "help-circle-outline", label: "Help Center", route: "/(pages)/helpsupport", color: COLORS.info },
-        { icon: "shield-checkmark-outline", label: "Privacy Policy", route: "/(pages)/privacypolicy", color: "#8b5cf6" },
-        { icon: "document-text-outline", label: "Terms of Service", route: "/(pages)/terms", color: "#9C27B0" },
-        { icon: "information-circle-outline", label: "About AgriVision", route: "/(pages)/about", color: COLORS.success },
-      ]
+        { icon: "share-social-outline",    label: "Invite Friends",     action: () => Alert.alert("Invite", "Coming soon!") },
+        { icon: "star-outline",            label: "Rate AgriVision",    action: () => Alert.alert("Rate App", "Thank you!") },
+        { icon: "mail-outline",            label: "Contact Developer",  action: () => Linking.openURL("mailto:support@agrivision.com") },
+        { icon: "document-text-outline",   label: "Terms of Service",   route: "/(pages)/terms" },
+      ],
     },
-    {
-      title: "Interaction",
-      items: [
-        { icon: "share-social-outline", label: "Invite Friends", action: () => Alert.alert("Invite Friends", "[Coming Soon]"), color: "#ec4899" },
-        { icon: "star-outline", label: "Rate Us on Store", action: handleRateApp, color: "#FFC107" },
-        { icon: "mail-outline", label: "Contact Developer", action: handleContactUs, color: "#E91E63" },
-      ]
-    }
   ];
 
   return (
     <SafeScreen>
-      <View style={[styles.container, { backgroundColor: COLORS.background }]}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
+      <View style={s.container}>
+        <TopBar title="Profile" rightIcon="search-outline" onRight={() => {}} />
 
-          {/* Custom Profile Section */}
-          <View style={styles.profileHero}>
-            <View style={[styles.avatarBox, { backgroundColor: COLORS.primary, borderWidth: 0 }]}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
+
+          {/* ── User Card ── */}
+          <TouchableOpacity
+            style={s.userCard}
+            onPress={() => router.push("/(pages)/editprofile")}
+            activeOpacity={0.8}
+          >
+            <View style={s.avatarRing}>
               {user.profileImage ? (
-                <Image source={{ uri: user.profileImage }} style={styles.avatarImage} />
+                <Image source={{ uri: user.profileImage }} style={s.avatarImg} />
               ) : (
-                <Text style={[styles.avatarInitial, { color: isDarkMode ? COLORS.black : COLORS.white }]}>{(user.fullName || user.username || "U").charAt(0).toUpperCase()}</Text>
+                <View style={s.avatarFallback}>
+                  <Text style={s.avatarInitial}>{initial}</Text>
+                </View>
               )}
             </View>
-            <Text style={[styles.userName, { color: COLORS.textPrimary }]}>{user.fullName || user.username || "Farmer"}</Text>
-            <Text style={[styles.userEmail, { color: COLORS.textTertiary }]}>@{user.username}</Text>
-            
-            <TouchableOpacity 
-              style={[styles.editBtn, { backgroundColor: `${COLORS.primary}15` }]}
-              onPress={() => router.push("/(pages)/editprofile")}
-            >
-              <Text style={[styles.editBtnText, { color: COLORS.primary }]}>Edit Profile</Text>
+            <View style={s.userInfo}>
+              <Text style={s.userName}>{user.fullName || firstName}</Text>
+              <Text style={s.userEmail}>{user.email || `@${user.username}`}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={COLORS_BASE.sub} />
+          </TouchableOpacity>
+
+          {/* ── Upgrade Banner ── */}
+          <View style={s.upgradeBanner}>
+            <View style={s.upgradeIcon}>
+              <Ionicons name="sparkles" size={22} color="#C8F572" />
+            </View>
+            <View style={s.upgradeText}>
+              <Text style={s.upgradeTitle}>Upgrade to Pro</Text>
+              <Text style={s.upgradeSub}>Unlock AI insights, advanced analytics & more.</Text>
+            </View>
+            <TouchableOpacity style={s.upgradeBtn} activeOpacity={0.85}>
+              <Text style={s.upgradeBtnText}>Upgrade</Text>
+              <Ionicons name="chevron-forward" size={13} color={COLORS_BASE.text} />
             </TouchableOpacity>
           </View>
 
-          {/* Quick Stats Row */}
-          <View style={styles.statsRow}>
-            <View style={[styles.statBox, { backgroundColor: COLORS.cardBackground, borderWidth: 0 }]}>
-              <Text style={[styles.statValue, { color: COLORS.textPrimary }]}>{user.farmSize || "N/A"}</Text>
-              <Text style={[styles.statLabel, { color: COLORS.textTertiary }]}>Farm Size</Text>
-            </View>
-            <View style={[styles.statBox, { backgroundColor: COLORS.cardBackground, borderWidth: 0 }]}>
-              <Text style={[styles.statValue, { color: COLORS.textPrimary }]}>{user.experience || "0"}</Text>
-              <Text style={[styles.statLabel, { color: COLORS.textTertiary }]}>Years Exp</Text>
-            </View>
-          </View>
-
-          {/* Menu Groups */}
-          {menuGroups.map((group, gIdx) => (
-            <View key={gIdx} style={styles.menuGroup}>
-              <Text style={[styles.groupTitle, { color: COLORS.textTertiary }]}>{group.title}</Text>
-              <View style={[styles.groupContent, { backgroundColor: COLORS.cardBackground, borderWidth: 0 }]}>
-                {group.items.map((item, iIdx) => (
-                  <TouchableOpacity
-                    key={iIdx}
-                    style={styles.menuItem}
-                    onPress={() => item.action ? item.action() : router.push(item.route)}
-                  >
-                    <View style={[styles.menuIconBox, { backgroundColor: `${item.color}10` }]}>
-                      <Ionicons name={item.icon} size={20} color={item.color} />
-                    </View>
-                    <Text style={[styles.menuLabel, { color: COLORS.textPrimary }]}>{item.label}</Text>
-                    <Ionicons name="chevron-forward" size={18} color={COLORS.textTertiary} />
-                  </TouchableOpacity>
-                ))}
-              </View>
+          {/* ── Menu Groups ── */}
+          {menuGroups.map((group, gi) => (
+            <View key={gi} style={s.menuGroup}>
+              {group.items.map((item, ii) => (
+                <TouchableOpacity
+                  key={ii}
+                  style={[
+                    s.menuRow,
+                    ii === 0               && s.menuRowFirst,
+                    ii === group.items.length - 1 && s.menuRowLast,
+                    ii < group.items.length - 1   && s.menuRowDivider,
+                  ]}
+                  onPress={() => item.action ? item.action() : router.push(item.route)}
+                  activeOpacity={0.7}
+                >
+                  <View style={s.menuIconWrap}>
+                    <Ionicons name={item.icon} size={20} color={COLORS_BASE.sub} />
+                  </View>
+                  <Text style={s.menuLabel}>{item.label}</Text>
+                  {item.toggle ? (
+                    <Switch
+                      value={item.value}
+                      onValueChange={item.onToggle}
+                      trackColor={{ false: "#D1D5DB", true: COLORS_BASE.accent }}
+                      thumbColor="#FFFFFF"
+                    />
+                  ) : (
+                    <Ionicons name="chevron-forward" size={16} color={COLORS_BASE.sub} />
+                  )}
+                </TouchableOpacity>
+              ))}
             </View>
           ))}
 
-          {/* Logout Section */}
-          <TouchableOpacity 
-            style={[styles.logoutBtn, { backgroundColor: `${COLORS.error}10`, borderWidth: 0 }]}
-            onPress={handleLogout}
-          >
-            <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
-            <Text style={[styles.logoutText, { color: COLORS.error }]}>Sign Out</Text>
-          </TouchableOpacity>
+          {/* ── Sign Out ── */}
+          <View style={s.menuGroup}>
+            <TouchableOpacity style={[s.menuRow, s.menuRowFirst, s.menuRowLast]} onPress={handleLogout} activeOpacity={0.7}>
+              <View style={s.menuIconWrap}>
+                <Ionicons name="log-out-outline" size={20} color={COLORS_BASE.red} />
+              </View>
+              <Text style={[s.menuLabel, { color: COLORS_BASE.red }]}>Sign Out</Text>
+            </TouchableOpacity>
+          </View>
 
-          <Text style={[styles.versionText, { color: COLORS.textTertiary }]}>AgriVision v2.0.0 • Made for Farmers</Text>
-
+          <Text style={s.version}>AgriVision v2.0.0 • Made for Farmers</Text>
           <View style={{ height: 120 }} />
         </ScrollView>
       </View>
@@ -134,40 +186,74 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scrollContent: { padding: 20 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scrollView: { flex: 1 },
-  headerHero: { alignItems: 'center', marginVertical: 30 },
-  profileHero: { alignItems: 'center', marginBottom: 30 },
-  avatarBox: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-    borderWidth: 0,
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS_BASE.bg },
+  scroll:    { paddingHorizontal: 20, paddingTop: 8 },
+
+  // User Card
+  userCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS_BASE.card,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 12,
+    gap: 14,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  avatarInitial: { color: '#FFF', fontSize: 40, fontWeight: '700' },
-  avatarImage: { width: 100, height: 100, borderRadius: 50 },
-  userName: { fontSize: 24, fontWeight: '800', marginBottom: 4, letterSpacing: -0.5 },
-  userEmail: { fontSize: 14, fontWeight: '500', marginBottom: 16 },
-  editBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
-  editBtnText: { fontSize: 14, fontWeight: '700' },
-  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 30 },
-  statBox: { flex: 1, padding: 16, borderRadius: 24, alignItems: 'center', borderWidth: 0 },
-  statValue: { fontSize: 18, fontWeight: '800', marginBottom: 2 },
-  statLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
-  menuGroup: { marginBottom: 25 },
-  groupTitle: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase', marginLeft: 16, marginBottom: 10, letterSpacing: 1 },
-  groupContent: { borderRadius: 24, overflow: 'hidden', borderWidth: 0 },
-  menuItem: { flexDirection: 'row', alignItems: 'center', padding: 18 },
-  menuDivider: { borderBottomWidth: 0 },
-  menuIconBox: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-  menuLabel: { flex: 1, fontSize: 16, fontWeight: '600' },
-  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 18, borderRadius: 24, gap: 10, marginTop: 10, borderWidth: 0 },
-  logoutText: { fontSize: 16, fontWeight: '800' },
-  versionText: { textAlign: 'center', fontSize: 12, marginTop: 30, opacity: 0.5, fontWeight: '600' }
+  avatarRing: {
+    width: 54, height: 54, borderRadius: 27,
+    borderWidth: 2, borderColor: "#E5E7E5",
+    overflow: "hidden",
+  },
+  avatarImg:     { width: 54, height: 54 },
+  avatarFallback:{ width: 54, height: 54, backgroundColor: COLORS_BASE.accent, alignItems: "center", justifyContent: "center" },
+  avatarInitial: { color: "#FFFFFF", fontSize: 22, fontWeight: "800" },
+  userInfo:      { flex: 1 },
+  userName:      { fontSize: 16, fontWeight: "700", color: COLORS_BASE.text, marginBottom: 2 },
+  userEmail:     { fontSize: 13, color: COLORS_BASE.sub },
+
+  // Upgrade Banner
+  upgradeBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS_BASE.accent,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 24,
+    gap: 12,
+  },
+  upgradeIcon: {
+    width: 40, height: 40, borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    alignItems: "center", justifyContent: "center",
+  },
+  upgradeText:  { flex: 1 },
+  upgradeTitle: { color: "#FFFFFF", fontSize: 15, fontWeight: "800", marginBottom: 2 },
+  upgradeSub:   { color: "rgba(255,255,255,0.65)", fontSize: 11, lineHeight: 16 },
+  upgradeBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.15)",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 2,
+  },
+  upgradeBtnText: { color: "#FFFFFF", fontWeight: "700", fontSize: 13 },
+
+  // Menu Groups
+  menuGroup:     { backgroundColor: COLORS_BASE.card, borderRadius: 18, marginBottom: 12, overflow: "hidden", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 1 },
+  menuRow:       { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 15, gap: 14 },
+  menuRowFirst:  { borderTopLeftRadius: 18, borderTopRightRadius: 18 },
+  menuRowLast:   { borderBottomLeftRadius: 18, borderBottomRightRadius: 18 },
+  menuRowDivider:{ borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: COLORS_BASE.border },
+  menuIconWrap:  { width: 32, height: 32, borderRadius: 10, backgroundColor: COLORS_BASE.bg, alignItems: "center", justifyContent: "center" },
+  menuLabel:     { flex: 1, fontSize: 15, fontWeight: "600", color: COLORS_BASE.text },
+
+  version: { textAlign: "center", fontSize: 11, color: COLORS_BASE.sub, marginTop: 20, opacity: 0.6 },
 });

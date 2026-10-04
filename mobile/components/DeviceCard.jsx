@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getColors } from '../constants/colors';
 import { useThemeStore } from '../store/themeStore';
@@ -13,6 +13,7 @@ export default function DeviceCard({
   onHistory = () => {},
   onDelete = () => {},
   onDiagnose = () => {},
+  isDiagnosing = false,
 }) {
   const { isDarkMode } = useThemeStore();
   const COLORS = getColors(isDarkMode);
@@ -25,13 +26,13 @@ export default function DeviceCard({
   
   const prediction =
     record?.prediction
-      ? typeof record.prediction === 'object'
+      ? (typeof record.prediction === 'object' && record.prediction !== null)
         ? record.prediction.class ?? JSON.stringify(record.prediction)
         : String(record.prediction)
       : 'Monitoring...';
 
   return (
-    <View style={[styles.card, { backgroundColor: COLORS.cardBackground, borderWidth: 0 }]}>
+    <View style={[styles.card, { backgroundColor: COLORS.cardBackground, borderColor: COLORS.border, borderWidth: 1 }]}>
       {/* Header with ID and Menu */}
       <View style={styles.header}>
         <View style={[styles.idBadge, { backgroundColor: `${COLORS.primary}10` }]}>
@@ -78,7 +79,7 @@ export default function DeviceCard({
       {/* Main Vision Display */}
       <View style={[styles.imageWrap, { backgroundColor: COLORS.secondaryBackground }]}>
         {record?.image ? (
-          <Image source={{ uri: record.image }} style={styles.image} resizeMode="cover" />
+          <Image source={typeof record.image === 'string' ? { uri: record.image } : record.image} style={styles.image} resizeMode="cover" />
         ) : (
           <View style={[styles.image, styles.noImage]}>
             <Ionicons name="camera-outline" size={32} color={COLORS.textTertiary} />
@@ -121,9 +122,16 @@ export default function DeviceCard({
           onPress={onDiagnose}
           style={[styles.diagnoseBtn, { backgroundColor: COLORS.primary }]}
           activeOpacity={0.8}
+          disabled={isDiagnosing}
         >
-          <Text style={styles.diagnoseText}>Analyze</Text>
-          <Ionicons name="chevron-forward" size={16} color="#fff" />
+          {isDiagnosing ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <>
+              <Text style={styles.diagnoseText}>Analyze</Text>
+              <Ionicons name="chevron-forward" size={16} color="#fff" />
+            </>
+          )}
         </TouchableOpacity>
       </View>
     </View>

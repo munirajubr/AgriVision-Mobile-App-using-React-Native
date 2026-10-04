@@ -1,99 +1,132 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { View, Platform, Text, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
+import { View, Text, Platform, StyleSheet, TouchableOpacity, Dimensions, Animated } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRef, useEffect } from "react";
 import { getColors } from "../../constants/colors";
-import { useThemeStore } from "../../store/themeStore";
 
 const { width } = Dimensions.get("window");
 
-// Custom Tab Bar to ensure absolute control and zero squashing
-function CustomTabBar({ state, descriptors, navigation, COLORS, isDarkMode }) {
+// Same icons/labels as the sub-tab dock — dashboard icon for Home
+const TAB_ROUTES = [
+  { name: "index",   icon: "grid",          iconOff: "grid-outline",         label: "Dashboard" },
+  { name: "market",  icon: "pricetag",       iconOff: "pricetag-outline",     label: "Market" },
+  { name: "weather", icon: "cloudy",         iconOff: "cloudy-outline",       label: "Weather" },
+  { name: "profile", icon: "person",         iconOff: "person-outline",       label: "Profile" },
+];
+
+// Taller pill to accommodate icon + label stacked
+const DOCK_H   = 68;
+const DOCK_PAD = 6;
+const DOCK_W   = Math.min(width - 40, 380);
+const ITEM_W   = (DOCK_W - DOCK_PAD * 2) / TAB_ROUTES.length;
+
+function LiquidTabBar({ state, descriptors, navigation }) {
   const insets = useSafeAreaInsets();
-  
+
+  const blobX  = useRef(new Animated.Value(state.index * ITEM_W)).current;
+  const blobSX = useRef(new Animated.Value(1)).current;
+  const blobSY = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(blobX, {
+        toValue: state.index * ITEM_W,
+        friction: 7,
+        tension: 50,
+        useNativeDriver: true,
+      }),
+      Animated.sequence([
+        Animated.parallel([
+          Animated.timing(blobSX, { toValue: 1.28, duration: 110, useNativeDriver: true }),
+          Animated.timing(blobSY, { toValue: 0.78, duration: 110, useNativeDriver: true }),
+        ]),
+        Animated.parallel([
+          Animated.spring(blobSX, { toValue: 1, friction: 4, tension: 70, useNativeDriver: true }),
+          Animated.spring(blobSY, { toValue: 1, friction: 4, tension: 70, useNativeDriver: true }),
+        ]),
+      ]),
+    ]).start();
+  }, [state.index]);
+
   return (
-    <View style={[
-      styles.tabBarContainer, 
-      { 
-        bottom: Platform.OS === 'ios' ? insets.bottom + 5 : 15,
-        backgroundColor: COLORS.background,
-        borderColor: COLORS.border,
-        shadowColor: 'rgba(0,0,0,0.05)',
-      }
-    ]}>
-      {state.routes.map((route, index) => {
-        const { options } = descriptors[route.key];
-        const isFocused = state.index === index;
+    <View
+      style={[
+        styles.wrapper,
+        { bottom: Platform.OS === "ios" ? Math.max(insets.bottom + 6, 18) : 16 },
+      ]}
+      pointerEvents="box-none"
+    >
+      <View style={styles.dock}>
 
-        // Skip hidden routes
-        if (options.href === null) return null;
+        {/* Liquid blob */}
+        <Animated.View
+          style={[
+            styles.blob,
+            {
+              width: ITEM_W,
+              transform: [
+                { translateX: blobX },
+                { scaleX: blobSX },
+                { scaleY: blobSY },
+              ],
+            },
+          ]}
+        />
 
-        const onPress = () => {
-          const event = navigation.emit({
-            type: 'tabPress',
-            target: route.key,
-            canPreventDefault: true,
-          });
+        {/* Icon + Label — always visible, matching sub-tab style */}
+        {state.routes.map((route, index) => {
+          const { options } = descriptors[route.key];
+          if (options.href === null) return null;
 
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
-          }
-        };
+          const isFocused = state.index === index;
+          const meta = TAB_ROUTES.find((t) => t.name === route.name) ?? TAB_ROUTES[index];
 
-        const getIcon = (routeName, focused) => {
-          const icons = {
-            index: focused ? "home" : "home-outline",
-            market: focused ? "basket" : "basket-outline",
-            weather: focused ? "partly-sunny" : "partly-sunny-outline",
-            profile: focused ? "person" : "person-outline",
+          const onPress = () => {
+            const event = navigation.emit({
+              type: "tabPress",
+              target: route.key,
+              canPreventDefault: true,
+            });
+            if (!isFocused && !event.defaultPrevented) {
+              navigation.navigate(route.name);
+            }
           };
-          return icons[routeName] || "square";
-        };
 
-        const getLabel = (routeName) => {
-          const labels = {
-            index: "Home",
-            market: "Market",
-            weather: "Sky",
-            profile: "Me",
-          };
-          return labels[routeName] || routeName;
-        };
-
-        return (
-          <TouchableOpacity
-            key={index}
-            onPress={onPress}
-            activeOpacity={0.7}
-            style={styles.tabItem}
-          >
-            <Ionicons 
-              name={getIcon(route.name, isFocused)} 
-              size={26} 
-              color={isFocused ? COLORS.primary : COLORS.textTertiary} 
-            />
-            {isFocused && <View style={[styles.focusDot, { backgroundColor: COLORS.primary }]} />}
-          </TouchableOpacity>
-        );
-      })}
+          return (
+            <TouchableOpacity
+              key={route.key}
+              onPress={onPress}
+              activeOpacity={0.85}
+              style={styles.tabItem}
+            >
+              <Ionicons
+                name={isFocused ? meta.icon : meta.iconOff}
+                size={20}
+                color={isFocused ? "#C8F572" : "#5E7A65"}
+              />
+              <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]}>
+                {meta.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </View>
   );
 }
 
 export default function TabLayout() {
-  const { isDarkMode } = useThemeStore();
-  const COLORS = getColors(isDarkMode);
+  const COLORS = getColors();
 
   return (
     <Tabs
-      tabBar={(props) => <CustomTabBar {...props} COLORS={COLORS} isDarkMode={isDarkMode} />}
-      screenOptions={{
-        headerShown: false,
-      }}
+      tabBar={(props) => <LiquidTabBar {...props} />}
+      screenOptions={{ headerShown: false }}
       sceneContainerStyle={{ backgroundColor: COLORS.background }}
     >
-      <Tabs.Screen name="index" options={{ title: "Home" }} />
-      <Tabs.Screen name="market" options={{ title: "Market" }} />
+      <Tabs.Screen name="index"   options={{ title: "Dashboard" }} />
+      <Tabs.Screen name="market"  options={{ title: "Market" }} />
       <Tabs.Screen name="weather" options={{ title: "Weather" }} />
       <Tabs.Screen name="profile" options={{ title: "Profile" }} />
     </Tabs>
@@ -101,34 +134,56 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
-  tabBarContainer: {
-    position: 'absolute',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    left: 20,
-    right: 20,
-    height: 64,
-    borderRadius: 32,
-    paddingHorizontal: 10,
-    elevation: 5,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    borderWidth: 1,
+  wrapper: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    zIndex: 999,
+  },
+  dock: {
+    width: DOCK_W,
+    height: DOCK_H,
+    borderRadius: DOCK_H / 2,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: DOCK_PAD,
+    backgroundColor: "#132317",
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.22,
+    shadowRadius: 18,
+    elevation: 12,
+  },
+  blob: {
+    position: "absolute",
+    top:    DOCK_PAD,
+    bottom: DOCK_PAD,
+    left:   DOCK_PAD,
+    borderRadius: (DOCK_H - DOCK_PAD * 2) / 2,
+    backgroundColor: "#1E4D30",
+    shadowColor: "#84CC16",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
   },
   tabItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
-    width: 60,
+    width: ITEM_W,
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 3,
+    zIndex: 2,
   },
-  focusDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    marginTop: 4,
-    position: 'absolute',
-    bottom: 8,
+  tabLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#5E7A65",
+    letterSpacing: 0.2,
+  },
+  tabLabelActive: {
+    color: "#C8F572",
+    fontWeight: "800",
   },
 });

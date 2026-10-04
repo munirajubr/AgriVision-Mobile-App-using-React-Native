@@ -2,249 +2,107 @@ import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "../constants/api";
 
-export const useAuthStore = create((set, get) => ({
-  user: null,
-  token: null,
-  isLoading: false,
-  isCheckingAuth: true,
+const DEFAULT_USER = {
+  id: "user_default_01",
+  fullName: "Raj Gowda",
+  username: "raj_gowda",
+  email: "raj.gowda@gmail.com",
+  phone: "+91 98765 43210",
+  farmLocation: "Bangalore",
+  farmSize: "12 Acres",
+  cropType: "Eggplant & Tomato",
+  soilType: "Red Loam",
+  experience: "8",
+  bio: "Progressive farmer practicing modern organic & precision agriculture.",
+  isVerified: true,
+  profileImage: null,
+};
 
-  // Step 1: Request OTP
+export const useAuthStore = create((set, get) => ({
+  user: DEFAULT_USER,
+  token: "default_mock_token_12345",
+  isLoading: false,
+  isCheckingAuth: false,
+
+  // Step 1: Request OTP (Offline mock)
   register: async (email) => {
     set({ isLoading: true });
-    try {
-      const response = await fetch(`${API_URL}/api/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Request failed");
-      set({ isLoading: false });
-      return { success: true, message: data.message, email: data.email || email };
-    } catch (error) {
-      console.error("[RegisterOTP] Error:", error.message);
-      set({ isLoading: false });
-      return { success: false, error: error.message };
-    }
+    setTimeout(() => set({ isLoading: false }), 300);
+    return { success: true, message: "OTP sent successfully (Mock)", email };
   },
 
-  // Step 2: Verify OTP
+  // Step 2: Verify OTP (Offline mock)
   verifyEmail: async (email, otp) => {
     set({ isLoading: true });
-    try {
-      const response = await fetch(`${API_URL}/api/auth/verify-email`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Verification failed");
-      set({ isLoading: false });
-      return { success: true, message: data.message };
-    } catch (error) {
-      set({ isLoading: false });
-      return { success: false, error: error.message };
-    }
+    setTimeout(() => set({ isLoading: false }), 300);
+    return { success: true, message: "Email verified (Mock)" };
   },
 
-  // Step 3: Finalize (Name & Pass)
+  // Step 3: Finalize (Name & Pass) (Offline mock)
   finalizeRegistration: async (email, fullName, password) => {
     set({ isLoading: true });
-    try {
-      const response = await fetch(`${API_URL}/api/auth/finalize-registration`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, fullName, password }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Registration failed");
-      
-      await AsyncStorage.setItem("user", JSON.stringify(data.user));
-      await AsyncStorage.setItem("token", data.token);
-      set({ user: data.user, token: data.token, isLoading: false });
-      return { success: true };
-    } catch (error) {
-      set({ isLoading: false });
-      return { success: false, error: error.message };
-    }
+    const newUser = {
+      ...DEFAULT_USER,
+      email: email || DEFAULT_USER.email,
+      fullName: fullName || DEFAULT_USER.fullName,
+      username: (fullName || "farmer").toLowerCase().replace(/\s+/g, '_'),
+    };
+    await AsyncStorage.setItem("user", JSON.stringify(newUser));
+    await AsyncStorage.setItem("token", "default_mock_token_12345");
+    set({ user: newUser, token: "default_mock_token_12345", isLoading: false });
+    return { success: true };
   },
 
-  // Resend OTP
+  // Resend OTP (Offline mock)
   resendOTP: async (email) => {
-    try {
-      const response = await fetch(`${API_URL}/api/auth/resend-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Resend failed");
-      return { success: true, message: data.message };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
+    return { success: true, message: "OTP resent (Mock)" };
   },
 
-  // Login (Supports email or username)
+  // Login (Offline mock)
   login: async (identifier, password) => {
     set({ isLoading: true });
-    try {
-      const response = await fetch(`${API_URL}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier, password }),
-      });
-      let data;
-      const text = await response.text();
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        throw new Error(text || "Invalid response from server");
-      }
-
-      if (!response.ok) {
-        const error = new Error(data.error || data.message || "Login failed");
-        error.email = data.email;
-        throw error;
-      }
-      await AsyncStorage.setItem("user", JSON.stringify(data.user));
-      await AsyncStorage.setItem("token", data.token);
-      set({ user: data.user, token: data.token, isLoading: false });
-      return { success: true };
-    } catch (error) {
-      console.error("[Login] Error:", error);
-      set({ isLoading: false });
-      
-      // If the error contains email (from not verified case), pass it back
-      return { 
-        success: false, 
-        error: error.message, 
-        notVerified: error.message === 'Email not verified',
-        email: error.email // We need to make sure this is available
-      };
-    }
+    const loggedUser = {
+      ...DEFAULT_USER,
+      fullName: identifier?.includes('@') ? DEFAULT_USER.fullName : (identifier || DEFAULT_USER.fullName),
+    };
+    await AsyncStorage.setItem("user", JSON.stringify(loggedUser));
+    await AsyncStorage.setItem("token", "default_mock_token_12345");
+    set({ user: loggedUser, token: "default_mock_token_12345", isLoading: false });
+    return { success: true };
   },
 
   // Forgot Password
   forgotPassword: async (email) => {
-    set({ isLoading: true });
-    try {
-      const response = await fetch(`${API_URL}/api/auth/forgot-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await response.json();
-      set({ isLoading: false });
-      if (!response.ok) throw new Error(data.error || "Request failed");
-      return { success: true, message: data.message };
-    } catch (error) {
-      set({ isLoading: false });
-      return { success: false, error: error.message };
-    }
+    return { success: true, message: "Password reset link sent (Mock)" };
   },
 
   // Verify Reset OTP
   verifyResetOTP: async (email, otp) => {
-    set({ isLoading: true });
-    try {
-      const response = await fetch(`${API_URL}/api/auth/verify-reset-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp }),
-      });
-      const data = await response.json();
-      set({ isLoading: false });
-      if (!response.ok) throw new Error(data.error || "OTP verification failed");
-      return { success: true };
-    } catch (error) {
-      set({ isLoading: false });
-      return { success: false, error: error.message };
-    }
+    return { success: true };
   },
 
   // Reset Password
   resetPassword: async (email, otp, newPassword) => {
-    set({ isLoading: true });
-    try {
-      const response = await fetch(`${API_URL}/api/auth/reset-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp, newPassword }),
-      });
-      const data = await response.json();
-      set({ isLoading: false });
-      if (!response.ok) throw new Error(data.error || "Password reset failed");
-      return { success: true, message: data.message };
-    } catch (error) {
-      set({ isLoading: false });
-      return { success: false, error: error.message };
-    }
+    return { success: true, message: "Password reset successfully (Mock)" };
   },
 
   // Profile setup
   setupProfile: async (profileDetails) => {
-    set({ isLoading: true });
-    try {
-      const token = get().token;
-      if (!token) throw new Error("Not authenticated");
-      const response = await fetch(`${API_URL}/api/auth/setup`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(profileDetails),
-      });
-      let data;
-      const text = await response.text();
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        throw new Error(text || "Invalid response from server");
-      }
-
-      if (!response.ok) throw new Error(data.error || "Setup failed");
-      await AsyncStorage.setItem("user", JSON.stringify(data.user));
-      set({ user: data.user, isLoading: false });
-      return { success: true };
-    } catch (error) {
-      console.error("[SetupProfile] Error:", error);
-      set({ isLoading: false });
-      return { success: false, error: error.message };
-    }
+    const updatedUser = { ...get().user, ...profileDetails };
+    await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
+    set({ user: updatedUser, isLoading: false });
+    return { success: true };
   },
 
   // Update Profile
   updateProfile: async (profileDetails) => {
     set({ isLoading: true });
     try {
-      const token = get().token;
-      if (!token) throw new Error("Not authenticated");
-      const response = await fetch(`${API_URL}/api/auth/profile`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(profileDetails),
-      });
-
-      let data;
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        data = await response.json();
-      } else {
-        const text = await response.text();
-        data = { message: text };
-      }
-
-      if (!response.ok) throw new Error(data.error || data.message || "Update failed");
-      await AsyncStorage.setItem("user", JSON.stringify(data.user));
-      set({ user: data.user, isLoading: false });
+      const updatedUser = { ...(get().user || DEFAULT_USER), ...profileDetails };
+      await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
+      set({ user: updatedUser, isLoading: false });
       return { success: true };
     } catch (error) {
-      console.error("[UpdateProfile] Error:", error);
       set({ isLoading: false });
       return { success: false, error: error.message };
     }
@@ -255,10 +113,11 @@ export const useAuthStore = create((set, get) => ({
     try {
       const token = await AsyncStorage.getItem("token");
       const userJson = await AsyncStorage.getItem("user");
-      const user = userJson ? JSON.parse(userJson) : null;
-      set({ token, user });
+      const user = userJson ? JSON.parse(userJson) : DEFAULT_USER;
+      set({ token: token || "default_mock_token_12345", user });
     } catch (error) {
       console.error("[Auth Check] Failed:", error);
+      set({ token: "default_mock_token_12345", user: DEFAULT_USER });
     } finally {
       set({ isCheckingAuth: false });
     }
@@ -267,21 +126,16 @@ export const useAuthStore = create((set, get) => ({
   // Logout
   logout: async () => {
     try {
-      await AsyncStorage.removeItem("token");
-      await AsyncStorage.removeItem("user");
-      // Use the store directly without hook
       const { useToastStore } = require("./toastStore");
-      useToastStore.getState().showToast("Logged out successfully", "info");
+      useToastStore.getState().showToast("Session reset to default user", "info");
     } catch (error) {
       console.error("[Logout] Error:", error);
     }
-    set({ token: null, user: null });
+    set({ token: "default_mock_token_12345", user: DEFAULT_USER });
   },
 
-  // Warmup server (Ping to wake up Render free tier)
+  // Warmup server (No-op in offline mode)
   warmupServer: async () => {
-    try {
-      fetch(`${API_URL}/`).catch(() => {});
-    } catch (e) {}
+    // No-op
   },
 }));

@@ -7,6 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { useAuthStore } from "../store/authStore";
 import { useThemeStore } from "../store/themeStore";
+import { useDashboardStore } from "../store/dashboardStore";
 import { useEffect, useState, useRef } from "react";
 import { getColors } from "../constants/colors";
 import Toast from "../components/Toast";
@@ -68,8 +69,9 @@ export default function RootLayout() {
   useEffect(() => {
     async function prepare() {
       try {
-        warmupServer();
         await checkAuth();
+        const user = useAuthStore.getState().user;
+        useDashboardStore.getState().fetchWeather(user?.farmLocation || 'Bangalore');
       } catch (e) {
         console.warn(e);
       } finally {
@@ -87,35 +89,19 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, appIsReady]);
 
-  // handle navigation based on the auth state
+  // Handle default navigation to main tabs
   useEffect(() => {
     if (!fontsLoaded || !appIsReady || isCheckingAuth) return;
 
     const inAuthGroup = segments[0] === "(auth)";
-    const inTabsGroup = segments[0] === "(tabs)";
-    const inDashboardGroup = segments[0] === "(dashboard)";
-    const inPagesGroup = segments[0] === "(pages)";
     const inRootIndex = segments.length === 0 || (segments.length === 1 && segments[0] === "index");
     
-    const isSignedIn = !!user && !!token;
-
-    if (!isSignedIn) {
-      // If not signed in and not in auth/root, go to onboarding/login
-      if (!inAuthGroup && !inRootIndex) {
-        // Use a small delay to ensure the store has finished updating
-        const timer = setTimeout(() => {
-          router.replace("/");
-        }, 10);
-        return () => clearTimeout(timer);
-      }
-    } else {
-      // If signed in and in auth/root, go to tabs
-      if (inAuthGroup || inRootIndex) {
-        const timer = setTimeout(() => {
-          router.replace("/(tabs)");
-        }, 10);
-        return () => clearTimeout(timer);
-      }
+    // Always navigate to tabs if in onboarding/auth/root index
+    if (inAuthGroup || inRootIndex) {
+      const timer = setTimeout(() => {
+        router.replace("/(tabs)");
+      }, 10);
+      return () => clearTimeout(timer);
     }
   }, [user, token, segments, fontsLoaded, appIsReady, isCheckingAuth]);
 

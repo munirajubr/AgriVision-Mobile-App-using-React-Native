@@ -1,44 +1,56 @@
-// iOS-themed color palette for AgriVision
-// Light and Dark mode support with agriculture-friendly green accent
+// NeoFarm Modern Agricultural Color System
+// Clean, organic, high-contrast aesthetics with forest greens and vibrant lime accents
 
 const LIGHT_COLORS = {
-  // Primary colors - Nature/Agriculture Green
-  primary: "#2E7D32", 
-  primaryLight: "#4CAF50",
-  primaryDark: "#1B5E20",
+  // Primary brand colors
+  primary: "#1A4D2E", 
+  primaryLight: "#2D6A4F",
+  primaryDark: "#0E301B",
+  accent: "#84CC16",
+  accentLime: "#A3E635",
+  accentSoft: "#D9F99D",
+  limeCard: "#D7F78A",
+  limeCardText: "#0F3819",
   
   // Backgrounds
-  background: "#FFFFFF",
+  background: "#F4F7F4",
   cardBackground: "#FFFFFF",
-  secondaryBackground: "#F8F9FB",
+  secondaryBackground: "#EBF1EB",
+  subtleCard: "#FAFCFA",
+  dockBackground: "#132317",
+  dockActive: "#1F3B27",
   
   // Text colors
-  textPrimary: "#1A1A1A",
-  textSecondary: "#757575",
-  textTertiary: "#9E9E9E",
-  placeholderText: "#BDBDBD",
+  textPrimary: "#111813",
+  textSecondary: "#4B5563",
+  textTertiary: "#94A3B8",
+  textMuted: "#64748B",
+  placeholderText: "#9CA3AF",
   
   // Borders and separators
-  border: "#E0E0E0",
-  separator: "#F5F5F5",
+  border: "rgba(0, 0, 0, 0.06)",
+  separator: "rgba(0, 0, 0, 0.04)",
+  glassBorder: "rgba(255, 255, 255, 0.3)",
+  glassBg: "rgba(255, 255, 255, 0.2)",
+  glassDarkBg: "rgba(0, 0, 0, 0.35)",
   
-  // Status colors
-  error: "#D32F2F",
-  warning: "#FFA000",
-  success: "#388E3C",
-  info: "#1976D2",
+  // Status & Badges
+  error: "#EF4444",
+  warning: "#F59E0B",
+  success: "#10B981",
+  info: "#0EA5E9",
   
   // Pastel backgrounds for categories
-  pastelGreen: "#E8F5E9",
-  pastelPurple: "#F3E5F5",
-  pastelBlue: "#E3F2FD",
-  pastelOrange: "#FFF3E0",
-  pastelPink: "#FCE4EC",
+  pastelGreen: "#EBF7EE",
+  pastelPurple: "#F3E8FF",
+  pastelBlue: "#E0F2FE",
+  pastelOrange: "#FEF3C7",
+  pastelPink: "#FCE7F3",
 
   // UI elements
-  inactive: "#E0E0E0",
-  shadow: "rgba(0, 0, 0, 0.08)",
-  overlay: "rgba(0, 0, 0, 0.5)",
+  inactive: "#E2E8F0",
+  shadow: "rgba(0, 0, 0, 0.06)",
+  overlay: "rgba(10, 20, 12, 0.5)",
   
   // Fixed colors
   white: "#FFFFFF",
@@ -49,43 +61,55 @@ const LIGHT_COLORS = {
 };
 
 const DARK_COLORS = {
-  // Primary colors - Vibrant Green for Dark Mode
-  primary: "#4CAF50",
-  primaryLight: "#81C784",
-  primaryDark: "#388E3C",
+  // Primary brand colors
+  primary: "#84CC16",
+  primaryLight: "#A3E635",
+  primaryDark: "#4D7C0F",
+  accent: "#A3E635",
+  accentLime: "#BEF264",
+  accentSoft: "#365314",
+  limeCard: "#1D3A1B",
+  limeCardText: "#BEF264",
   
   // Backgrounds
-  background: "#121212",
-  cardBackground: "#1E1E1E",
-  secondaryBackground: "#2C2C2C",
+  background: "#0D1610",
+  cardBackground: "#152219",
+  secondaryBackground: "#1B2E21",
+  subtleCard: "#18271D",
+  dockBackground: "#09100B",
+  dockActive: "#1A3320",
   
   // Text colors
-  textPrimary: "#FFFFFF",
-  textSecondary: "#B0B0B0",
-  textTertiary: "#757575",
-  placeholderText: "#616161",
+  textPrimary: "#F8FAFC",
+  textSecondary: "#CBD5E1",
+  textTertiary: "#64748B",
+  textMuted: "#94A3B8",
+  placeholderText: "#64748B",
   
   // Borders and separators
-  border: "#333333",
-  separator: "#2C2C2C",
+  border: "rgba(255, 255, 255, 0.08)",
+  separator: "rgba(255, 255, 255, 0.05)",
+  glassBorder: "rgba(255, 255, 255, 0.15)",
+  glassBg: "rgba(255, 255, 255, 0.08)",
+  glassDarkBg: "rgba(0, 0, 0, 0.6)",
   
-  // Status colors
-  error: "#EF5350",
-  warning: "#FFB300",
-  success: "#43A047",
-  info: "#42A5F5",
+  // Status & Badges
+  error: "#F87171",
+  warning: "#FBBF24",
+  success: "#34D399",
+  info: "#38BDF8",
   
-  // Darker pastel backgrounds for dark mode
-  pastelGreen: "#1B2E1B",
-  pastelPurple: "#2E1B2E",
-  pastelBlue: "#1B232E",
-  pastelOrange: "#2E231B",
-  pastelPink: "#2E1B23",
+  // Pastel backgrounds for categories
+  pastelGreen: "#132E1C",
+  pastelPurple: "#2A183D",
+  pastelBlue: "#102C40",
+  pastelOrange: "#3D2B12",
+  pastelPink: "#3D1728",
 
   // UI elements
-  inactive: "#333333",
+  inactive: "#1E293B",
   shadow: "rgba(0, 0, 0, 0.5)",
-  overlay: "rgba(0, 0, 0, 0.7)",
+  overlay: "rgba(0, 0, 0, 0.8)",
   
   // Fixed colors
   white: "#FFFFFF",
@@ -95,11 +119,10 @@ const DARK_COLORS = {
   twitter: "#1DA1F2",
 };
 
-// Export function to get colors based on theme
-export const getColors = (isDarkMode) => {
-  return isDarkMode ? DARK_COLORS : LIGHT_COLORS;
+// Export function to get colors based on theme (Light Theme Only)
+export const getColors = () => {
+  return LIGHT_COLORS;
 };
 
 // Default export for backward compatibility
 export default LIGHT_COLORS;
-

@@ -12,17 +12,22 @@ export default function MarketPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
-  const categories = ['All', 'Grains', 'Vegetables', 'Fruits', 'Pulses'];
+  const categories = ['All', 'Grains', 'Vegetables', 'Fruits', 'Pulses', 'Spices & Cash'];
 
   const marketData = [
-    { id: 1, name: 'Wheat', price: '₹2,150', unit: 'per quintal', change: '+2.5%', trend: 'up', category: 'Grains', location: 'Delhi Mandi' },
-    { id: 2, name: 'Rice (Basmati)', price: '₹3,200', unit: 'per quintal', change: '+1.8%', trend: 'up', category: 'Grains', location: 'Punjab Mandi' },
-    { id: 3, name: 'Tomato', price: '₹45', unit: 'per kg', change: '-3.2%', trend: 'down', category: 'Vegetables', location: 'Nasik Mandi' },
-    { id: 4, name: 'Onion', price: '₹38', unit: 'per kg', change: '+5.1%', trend: 'up', category: 'Vegetables', location: 'Nasik Mandi' },
-    { id: 5, name: 'Potato', price: '₹22', unit: 'per kg', change: '+0.8%', trend: 'up', category: 'Vegetables', location: 'Agra Mandi' },
-    { id: 6, name: 'Apple', price: '₹120', unit: 'per kg', change: '-1.5%', trend: 'down', category: 'Fruits', location: 'Shimla Mandi' },
-    { id: 7, name: 'Banana', price: '₹48', unit: 'per dozen', change: '+2.0%', trend: 'up', category: 'Fruits', location: 'Jalgaon Mandi' },
-    { id: 8, name: 'Toor Dal', price: '₹145', unit: 'per kg', change: '+3.5%', trend: 'up', category: 'Pulses', location: 'Latur Mandi' },
+    { id: 1, name: 'Eggplant (Brinjal)', price: '₹35', unit: 'per kg', change: '+4.2%', trend: 'up', category: 'Vegetables', location: 'Kolar Mandi' },
+    { id: 2, name: 'Wheat', price: '₹2,150', unit: 'per quintal', change: '+2.5%', trend: 'up', category: 'Grains', location: 'Delhi Mandi' },
+    { id: 3, name: 'Rice (Basmati)', price: '₹3,200', unit: 'per quintal', change: '+1.8%', trend: 'up', category: 'Grains', location: 'Punjab Mandi' },
+    { id: 4, name: 'Tomato', price: '₹45', unit: 'per kg', change: '-3.2%', trend: 'down', category: 'Vegetables', location: 'Nasik Mandi' },
+    { id: 5, name: 'Onion', price: '₹38', unit: 'per kg', change: '+5.1%', trend: 'up', category: 'Vegetables', location: 'Nasik Mandi' },
+    { id: 6, name: 'Potato', price: '₹22', unit: 'per kg', change: '+0.8%', trend: 'up', category: 'Vegetables', location: 'Agra Mandi' },
+    { id: 7, name: 'Cotton (Raw)', price: '₹6,850', unit: 'per quintal', change: '+3.1%', trend: 'up', category: 'Spices & Cash', location: 'Guntur Mandi' },
+    { id: 8, name: 'Red Chili', price: '₹18,500', unit: 'per quintal', change: '+6.4%', trend: 'up', category: 'Spices & Cash', location: 'Guntur Mandi' },
+    { id: 9, name: 'Turmeric', price: '₹13,200', unit: 'per quintal', change: '-1.2%', trend: 'down', category: 'Spices & Cash', location: 'Nizamabad Mandi' },
+    { id: 10, name: 'Apple', price: '₹120', unit: 'per kg', change: '-1.5%', trend: 'down', category: 'Fruits', location: 'Shimla Mandi' },
+    { id: 11, name: 'Banana', price: '₹48', unit: 'per dozen', change: '+2.0%', trend: 'up', category: 'Fruits', location: 'Jalgaon Mandi' },
+    { id: 12, name: 'Toor Dal', price: '₹145', unit: 'per kg', change: '+3.5%', trend: 'up', category: 'Pulses', location: 'Latur Mandi' },
+    { id: 13, name: 'Moong Dal', price: '₹110', unit: 'per kg', change: '+1.1%', trend: 'up', category: 'Pulses', location: 'Indore Mandi' },
   ];
 
   const filteredData = marketData.filter(item => {

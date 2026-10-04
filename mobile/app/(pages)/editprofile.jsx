@@ -70,11 +70,23 @@ export default function EditProfile() {
 
   const searchLocation = (query) => {
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    if (!query || query.length < 3) {
+    if (!query || query.length < 2) {
       setLocationSuggestions([]);
       setShowSuggestions(false);
       return;
     }
+
+    const defaultCities = [
+      { display: "Bangalore, Karnataka, India" },
+      { display: "Mysore, Karnataka, India" },
+      { display: "Delhi, NCR, India" },
+      { display: "Pune, Maharashtra, India" },
+      { display: "Mumbai, Maharashtra, India" },
+      { display: "Hyderabad, Telangana, India" },
+      { display: "Chennai, Tamil Nadu, India" },
+    ];
+
+    const localMatches = defaultCities.filter(c => c.display.toLowerCase().includes(query.toLowerCase()));
 
     searchTimeout.current = setTimeout(async () => {
       setIsSearchingLocation(true);
@@ -93,14 +105,16 @@ export default function EditProfile() {
           };
         }).filter(item => item.display !== '');
         
-        setLocationSuggestions(suggestions);
-        setShowSuggestions(suggestions.length > 0);
+        const finalSuggestions = suggestions.length > 0 ? suggestions : localMatches;
+        setLocationSuggestions(finalSuggestions);
+        setShowSuggestions(finalSuggestions.length > 0);
       } catch (error) {
-        console.error('Location search error:', error);
+        setLocationSuggestions(localMatches);
+        setShowSuggestions(localMatches.length > 0);
       } finally {
         setIsSearchingLocation(false);
       }
-    }, 500);
+    }, 300);
   };
 
   const selectLocation = (location) => {

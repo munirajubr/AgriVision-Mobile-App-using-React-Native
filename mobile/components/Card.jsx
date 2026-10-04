@@ -25,7 +25,7 @@ const Card = ({ image, icon, title, subtitle, link, onPress, variant = 'horizont
   if (variant === 'box') {
     return (
       <TouchableOpacity
-        style={[styles.boxCard, { backgroundColor: cardBg, borderWidth: 0 }]}
+        style={[styles.boxCard, { backgroundColor: cardBg, borderColor: COLORS.border }]}
         onPress={handlePress}
         activeOpacity={0.7}
       >
@@ -117,6 +117,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     minHeight: 160,
+    borderWidth: 1,
   },
   boxIconContainer: {
     width: 44,
